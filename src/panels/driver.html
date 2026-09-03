@@ -1,0 +1,51 @@
+<section class="panel-page">
+  <div class="page-heading">
+    <div>
+      <span class="role">CENTRO DEL REPARTIDOR</span>
+      <h1>Tus entregas</h1>
+      <p class="muted" id="driverSubtitle">Configura tu perfil para empezar a recibir entregas.</p>
+    </div>
+    <div id="driverToast" class="toast" role="status"></div>
+  </div>
+
+  <div class="dash-section" data-section="perfil">
+    <div class="box" style="max-width:480px">
+      <h2>🛵 Perfil y disponibilidad</h2>
+      <form id="driverProfileForm">
+        <div class="field"><label>Teléfono</label><input id="driverPhoneInput"></div>
+        <div class="field"><label>Tipo de vehículo</label><input id="driverVehicleInput" placeholder="Ej. Motor"></div>
+        <div class="field"><label>Placa</label><input id="driverPlateInput"></div>
+        <button type="submit" class="btn primary">Guardar perfil</button>
+      </form>
+
+      <div id="dispatchBox" style="margin-top:20px;display:none">
+        <p class="muted" id="approvalHint"></p>
+        <div class="tabs">
+          <button type="button" class="btn" data-dispatch="offline">Desconectado</button>
+          <button type="button" class="btn" data-dispatch="available">Disponible</button>
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top:20px">
+        <div class="stat"><div class="muted">Entregas completadas</div><strong id="statCompleted">0</strong></div>
+        <div class="stat"><div class="muted">Ganancias</div><strong id="statEarnings">RD$0</strong></div>
+        <div class="stat"><div class="muted">Calificación</div><strong id="statDriverRating">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="disponibles" style="display:none">
+    <h2>📍 Entregas disponibles</h2>
+    <div id="availableList" class="users-list"><div class="empty">No hay entregas disponibles ahora mismo.</div></div>
+  </div>
+
+  <div class="dash-section" data-section="activa" style="display:none">
+    <h2>🚴 Entrega activa</h2>
+    <div id="activeDelivery"><div class="empty">No tienes una entrega en curso.</div></div>
+  </div>
+
+  <div class="dash-section" data-section="historial" style="display:none">
+    <h2>🕘 Historial</h2>
+    <div id="historyList" class="users-list"><div class="empty">Todavía no has completado entregas.</div></div>
+  </div>
+</section>

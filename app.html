@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rapidito — Mi espacio</title>
+  <link rel="icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./src/styles/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><img src="./src/assets/logo-horizontal.png" alt="Rapidito"></div>
+      <div class="profile-mini">
+        <div class="profile-avatar" id="profileAvatar">Q</div>
+        <div>
+          <strong id="profileName">Cargando…</strong>
+          <small id="profileRole">Usuario</small>
+        </div>
+      </div>
+      <nav id="sideNav" class="side-nav" aria-label="Navegación principal"></nav>
+      <div class="sidebar-bottom">
+        <a class="side-link" href="./index.html"><span>🌐</span><span>Inicio</span></a>
+        <button id="logout" class="side-link danger"><span>↪</span><span>Cerrar sesión</span></button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div id="loading" class="box loading">Cargando tu espacio…</div>
+      <section id="dashboard" class="dashboard" style="display:none">
+        <div id="panelMount"></div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>

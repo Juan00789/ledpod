@@ -1,0 +1,66 @@
+<section class="panel-page">
+  <div class="page-heading">
+    <div>
+      <span class="role">MI QUICKIE</span>
+      <h1>Hola 👋</h1>
+      <p class="muted">Pide en los comercios activos cerca de ti.</p>
+    </div>
+    <div id="clientToast" class="toast" role="status"></div>
+  </div>
+
+  <div class="dash-section" data-section="inicio">
+    <div id="storeBrowser">
+      <h2>🏪 Comercios abiertos</h2>
+      <div class="filters" style="grid-template-columns:1fr;margin-bottom:14px">
+        <input id="storeSearchInput" placeholder="Buscar comercio por nombre o categoría…" autocomplete="off">
+      </div>
+      <div id="storeGrid" class="grid"><div class="empty">Cargando comercios…</div></div>
+    </div>
+
+    <div id="productBrowser" style="display:none">
+      <button type="button" id="btnVolverTiendas" class="btn">← Volver a comercios</button>
+      <h2 id="storeTitle" style="margin-top:12px"></h2>
+      <div id="productGrid" class="grid"></div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="favoritos" style="display:none">
+    <h2>❤️ Tus comercios favoritos</h2>
+    <div id="favoritesGrid" class="grid"><div class="empty">Todavía no tienes comercios favoritos. Toca el corazón en cualquier comercio de Inicio.</div></div>
+  </div>
+
+  <div class="dash-section" data-section="carrito" style="display:none">
+    <h2>🛒 Tu carrito</h2>
+    <div id="cartBox" class="box">
+      <div class="empty" id="cartEmpty">Tu carrito está vacío. Elige un comercio en Inicio.</div>
+      <div id="cartItems" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="pedidos" style="display:none">
+    <h2>📦 Mis pedidos</h2>
+    <div id="ordersList" class="users-list"><div class="empty">Cargando pedidos…</div></div>
+  </div>
+
+  <div class="dash-section" data-section="perfil" style="display:none">
+    <h2>👤 Mi perfil</h2>
+    <div class="box" style="max-width:420px">
+      <form id="profileForm">
+        <div class="field">
+          <label>Foto de perfil</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <img id="profilePhotoPreview" class="photo-preview round" style="display:none">
+            <input id="profilePhotoInput" type="file" accept="image/*" capture="user">
+          </div>
+          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
+          <button type="button" id="btnQuitarFotoPerfil" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+        </div>
+        <div class="field"><label>Nombre</label><input id="profileNameInput"></div>
+        <div class="field"><label>Teléfono</label><input id="profilePhoneInput"></div>
+        <div class="field"><label>Correo</label><input id="profileEmailInput" disabled></div>
+        <div class="field"><label>Dirección de entrega</label><input id="profileAddressInput" placeholder="Calle, sector, referencia"></div>
+        <button type="submit" class="btn primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+</section>

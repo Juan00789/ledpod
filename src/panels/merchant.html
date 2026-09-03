@@ -1,0 +1,85 @@
+<section class="panel-page">
+  <div class="page-heading">
+    <div>
+      <span class="role">CENTRO DEL COMERCIO</span>
+      <h1 id="merchantTitle">Tu comercio</h1>
+      <p class="muted" id="merchantSubtitle">Configura tu negocio para empezar a recibir pedidos.</p>
+    </div>
+    <div id="merchantToast" class="toast" role="status"></div>
+  </div>
+
+  <div class="dash-section" data-section="inicio">
+    <div id="noStoreBox" class="box">
+      <h2>🏪 Crea tu comercio</h2>
+      <p class="muted">Esto es lo primero que hay que hacer. Un administrador tiene que aprobarlo antes de que puedas recibir pedidos.</p>
+      <form id="createStoreForm" style="max-width:480px">
+        <div class="field"><label>Nombre del comercio *</label><input id="storeNameInput" required></div>
+        <div class="field"><label>Categoría</label><input id="storeCategoryInput" placeholder="Ej. Comida rápida"></div>
+        <div class="field"><label>Teléfono</label><input id="storePhoneInput"></div>
+        <div class="field"><label>Dirección</label><input id="storeAddressInput"></div>
+        <div class="field"><label>Descripción</label><input id="storeDescriptionInput"></div>
+        <button type="submit" class="btn primary">Crear comercio</button>
+      </form>
+    </div>
+
+    <div id="storeStatusBox" class="box" style="display:none">
+      <div class="stats" style="margin-bottom:16px">
+        <div class="stat"><div class="muted">Pedidos totales</div><strong id="statTotal">0</strong></div>
+        <div class="stat"><div class="muted">Entregados</div><strong id="statDelivered">0</strong></div>
+        <div class="stat"><div class="muted">Pendientes</div><strong id="statPending">0</strong></div>
+        <div class="stat"><div class="muted">Ventas (entregados)</div><strong id="statRevenue">RD$0</strong></div>
+        <div class="stat"><div class="muted">Calificación</div><strong id="statRating">—</strong></div>
+      </div>
+      <div class="section-head">
+        <div>
+          <h2 id="storeApprovalStatus"></h2>
+          <p class="muted" id="storeApprovalHint"></p>
+        </div>
+        <button type="button" id="btnToggleOpen" class="btn primary">Abrir comercio</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="productos" style="display:none">
+    <h2>🍔 Productos</h2>
+    <div class="box" style="max-width:520px;margin-bottom:18px">
+      <form id="productForm">
+        <div class="field"><label>Nombre *</label><input id="prodNameInput" required></div>
+        <div class="field"><label>Precio (RD$) *</label><input id="prodPriceInput" type="number" min="0" step="0.01" required></div>
+        <div class="field"><label>Categoría</label><input id="prodCategoryInput"></div>
+        <div class="field"><label>Descripción</label><input id="prodDescriptionInput"></div>
+        <div class="field">
+          <label>Foto del producto</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <img id="prodPhotoPreview" class="photo-preview" style="display:none">
+            <input id="prodPhotoInput" type="file" accept="image/*" capture="environment">
+          </div>
+          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
+          <button type="button" id="btnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+        </div>
+        <button type="submit" id="btnProductSubmit" class="btn primary">Agregar producto</button>
+        <button type="button" id="btnCancelarEdicion" class="btn" style="display:none">Cancelar edición</button>
+      </form>
+    </div>
+    <div id="productsList" class="grid"><div class="empty">Todavía no tienes productos.</div></div>
+  </div>
+
+  <div class="dash-section" data-section="pedidos" style="display:none">
+    <h2>📦 Pedidos</h2>
+    <div id="storeOrdersList" class="users-list"><div class="empty">Cargando pedidos…</div></div>
+  </div>
+
+  <div class="dash-section" data-section="perfil" style="display:none">
+    <h2>🏬 Perfil del comercio</h2>
+    <div class="box" style="max-width:480px">
+      <form id="storeProfileForm">
+        <div class="field"><label>Nombre</label><input id="editStoreName"></div>
+        <div class="field"><label>Categoría</label><input id="editStoreCategory"></div>
+        <div class="field"><label>Teléfono</label><input id="editStorePhone"></div>
+        <div class="field"><label>Dirección</label><input id="editStoreAddress"></div>
+        <div class="field"><label>Descripción</label><input id="editStoreDescription"></div>
+        <button type="submit" class="btn primary">Guardar cambios</button>
+      </form>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,114 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapidito — Delivery</title><link rel="icon" href="./favicon.ico"><link rel="stylesheet" href="./src/styles/app.css"></head><body><div class="app"><header><a href="./index.html" class="logo"><img src="./src/assets/logo-horizontal.png" alt="Rapidito"></a><input id="search" class="search" placeholder="Busca un comercio..."><nav class="nav"><a class="btn" href="./login.html">Entrar</a><a class="btn primary" href="./register.html">Crear cuenta</a></nav></header><main class="main">
+
+<section id="storeBrowser">
+  <section class="hero"><div><span class="pill">⚡ RAPIDITO AHORA</span><h1>Lo que quieres.<br>Sin vueltas.</h1><p>Comida y bebidas cerca de ti.</p></div><div style="font-size:80px">🛵</div></section>
+  <h2>🔥 Comercios cerca de ti</h2>
+  <p class="muted" style="margin:-8px 0 14px">Solo se muestran los comercios abiertos ahora mismo. Si buscas uno y no aparece, es porque está cerrado en este momento.</p>
+  <div id="stores" class="grid"></div>
+</section>
+
+<section id="productBrowser" style="display:none">
+  <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0">
+    <div>
+      <button type="button" id="btnVolverComercios" class="btn">← Comercios</button>
+      <h2 id="productBrowserTitle" style="display:inline;margin-left:10px">Comercio</h2>
+      <p class="muted" id="productBrowserSubtitle"></p>
+    </div>
+  </div>
+  <div id="storeProducts" class="grid"></div>
+</section>
+
+</main><footer class="site-footer"><div class="footer-inner"><img src="./src/assets/logo-icon.png" alt="Rapidito" class="footer-logo"><div class="footer-info"><strong>Rapidito</strong><span class="muted">Un delivery confiable a tu puerta</span></div><a class="footer-contact footer-contact-primary" href="tel:+18495732222">📞 (849) 573-2222</a><a class="footer-contact footer-contact-secondary" href="https://wa.me/18495732222" target="_blank" rel="noopener">🟢 También por WhatsApp</a></div></footer></div><script type="module">
+import { watchOpenStores, getStoreProducts, getTodayHoursLabel } from './src/catalog/stores-service.js';
+
+const esc = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+const money = (value) => `RD$${Number(value || 0).toLocaleString('es-DO')}`;
+
+const storeBrowser = document.getElementById('storeBrowser');
+const productBrowser = document.getElementById('productBrowser');
+const storesBox = document.getElementById('stores');
+const productsBox = document.getElementById('storeProducts');
+const search = document.getElementById('search');
+let allStores = [];
+
+function renderStores(list) {
+  if (!list.length) {
+    storesBox.innerHTML = '<div class="empty">Todavía no hay comercios abiertos por aquí ahora mismo. ¡Vuelve pronto!</div>';
+    return;
+  }
+  storesBox.innerHTML = list.map((s) => {
+    const initial = esc((s.name || '?').trim().charAt(0).toUpperCase());
+    const pic = s.photo
+      ? `<div class="pic"><img src="${s.photo}" alt="${esc(s.name)}"></div>`
+      : `<div class="pic" style="font-weight:900;color:var(--orange)">${initial}</div>`;
+    const hoursLabel = getTodayHoursLabel(s);
+    return `<article class="card" data-store="${s.id}" style="cursor:pointer">
+      ${pic}
+      <h3>${esc(s.name)}</h3>
+      <div class="muted">${esc(s.category || 'Comercio')}${s.description ? ' · ' + esc(s.description) : ''}</div>
+      ${hoursLabel ? `<div class="muted" style="margin-top:2px">🕒 ${esc(hoursLabel)}</div>` : ''}
+      <button type="button" class="add" data-store="${s.id}" data-name="${esc(s.name)}">Ver menú</button>
+    </article>`;
+  }).join('');
+
+  storesBox.querySelectorAll('[data-store]').forEach((el) => {
+    el.addEventListener('click', () => openStoreProducts(el.dataset.store, el.dataset.name || ''));
+  });
+}
+
+async function openStoreProducts(storeId, storeName) {
+  const store = allStores.find((s) => s.id === storeId);
+  const hoursLabel = getTodayHoursLabel(store);
+  document.getElementById('productBrowserTitle').textContent = storeName || store?.name || 'Comercio';
+  document.getElementById('productBrowserSubtitle').textContent = [store?.description, hoursLabel ? `🕒 ${hoursLabel}` : ''].filter(Boolean).join(' · ');
+  storeBrowser.style.display = 'none';
+  productBrowser.style.display = 'block';
+  productsBox.innerHTML = '<div class="empty">Cargando productos…</div>';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  try {
+    const products = await getStoreProducts(storeId);
+    renderProducts(products);
+  } catch (err) {
+    console.error(err);
+    productsBox.innerHTML = '<div class="empty">No se pudo cargar el menú de este comercio.</div>';
+  }
+}
+
+function renderProducts(products) {
+  if (!products.length) {
+    productsBox.innerHTML = '<div class="empty">Este comercio todavía no tiene productos publicados.</div>';
+    return;
+  }
+  productsBox.innerHTML = products.map((p) => `
+    <article class="card">
+      <div class="pic">
+        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '🍽️'}
+      </div>
+      <h3>${esc(p.name)}</h3>
+      <div class="muted">${esc(p.description || '')}</div>
+      <div class="price">${money(p.price)}</div>
+      <a class="add" style="display:block;text-align:center;text-decoration:none" href="./login.html">Agregar</a>
+    </article>
+  `).join('');
+}
+
+document.getElementById('btnVolverComercios')?.addEventListener('click', () => {
+  productBrowser.style.display = 'none';
+  storeBrowser.style.display = 'block';
+});
+
+search.addEventListener('input', () => {
+  const q = search.value.toLowerCase();
+  renderStores(allStores.filter((s) => (s.name + ' ' + (s.category || '')).toLowerCase().includes(q)));
+});
+
+watchOpenStores((stores) => {
+  allStores = stores;
+  renderStores(allStores);
+}, (err) => {
+  console.error(err);
+  storesBox.innerHTML = '<div class="empty">No se pudieron cargar los comercios. Intenta de nuevo más tarde.</div>';
+});
+</script></body></html>

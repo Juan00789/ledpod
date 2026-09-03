@@ -1,0 +1,239 @@
+<section class="panel-page">
+  <div class="page-heading">
+    <div>
+      <span class="role">ADMIN CENTRAL</span>
+      <h1>Centro de Administración</h1>
+      <p class="muted">Controla usuarios y la operación de Rapidito desde un solo lugar.</p>
+    </div>
+    <div id="adminToast" class="toast" role="status"></div>
+  </div>
+
+  <div class="dash-section" data-section="resumen">
+    <div class="stats">
+      <div class="stat"><div class="muted">Usuarios</div><strong id="userCount">0</strong></div>
+      <div class="stat"><div class="muted">Clientes</div><strong id="clientCount">0</strong></div>
+      <div class="stat"><div class="muted">Comercios</div><strong id="merchantCount">0</strong></div>
+      <div class="stat"><div class="muted">Repartidores</div><strong id="driverCount">0</strong></div>
+      <div class="stat"><div class="muted">Admins</div><strong id="adminCount">0</strong></div>
+    </div>
+    <div class="box" style="margin-top:18px">
+      <h2>📦 Pedidos</h2>
+      <div class="stats">
+        <div class="stat"><div class="muted">Total</div><strong id="statOrdersTotal">0</strong></div>
+        <div class="stat"><div class="muted">Entregados</div><strong id="statOrdersDelivered">0</strong></div>
+        <div class="stat"><div class="muted">En curso</div><strong id="statOrdersActive">0</strong></div>
+        <div class="stat"><div class="muted">Incidencias</div><strong id="statOrdersIssues">0</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="usuarios" style="display:none">
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>👥 Usuarios</h2>
+          <p class="muted">Los nuevos registros nacen como cliente. Desde aquí puedes cambiar su rol.</p>
+        </div>
+      </div>
+      <div class="filters">
+        <input id="userSearch" placeholder="Buscar por nombre, correo o UID…" autocomplete="off">
+        <select id="roleFilter">
+          <option value="todos">Todos los roles</option>
+          <option value="cliente">Clientes</option>
+          <option value="comercio">Comercios</option>
+          <option value="repartidor">Repartidores</option>
+          <option value="admin">Administradores</option>
+        </select>
+        <select id="statusFilter">
+          <option value="todos">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="blocked">Bloqueados</option>
+        </select>
+      </div>
+      <div id="usersTable" class="users-list">
+        <div class="empty">Cargando usuarios…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="comercios" style="display:none">
+    <div class="box" style="margin-bottom:18px">
+      <div class="section-head">
+        <div>
+          <h2>➕ Registrar comercio nuevo</h2>
+          <p class="muted">Da de alta un comercio tú mismo — sirve para darle promoción en Inicio aunque el dueño todavía no tenga cuenta en Rapidito o su cuenta no tenga el rol "Comercio". Si escribes su correo y ya está registrado, se vincula y su rol se sube a Comercio de una vez; si no está registrado todavía, el comercio queda activo (visible en Inicio) sin dueño, y lo vinculas más abajo cuando esa persona se registre.</p>
+        </div>
+      </div>
+      <form id="adminCreateStoreForm" style="max-width:520px">
+        <div class="field"><label>Nombre del comercio *</label><input id="newStoreName" required></div>
+        <div class="field"><label>Categoría</label><input id="newStoreCategory" placeholder="Ej. Comida rápida"></div>
+        <div class="field"><label>Teléfono</label><input id="newStorePhone"></div>
+        <div class="field"><label>Dirección</label><input id="newStoreAddress"></div>
+        <div class="field"><label>Descripción</label><input id="newStoreDescription"></div>
+        <div class="field"><label>Correo del dueño (opcional)</label><input id="newStoreOwnerEmail" type="email" placeholder="dueno@correo.com"></div>
+        <div class="field">
+          <label>Visibilidad inicial</label>
+          <select id="newStoreVisibility">
+            <option value="promo" selected>Activo y abierto ahora (promoción inmediata en Inicio)</option>
+            <option value="pending">Pendiente de aprobación (no visible todavía)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn primary">Crear comercio</button>
+      </form>
+    </div>
+
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>🏪 Comercios</h2>
+          <p class="muted">Aprueba un comercio cambiando su estado a "Activo" — solo entonces puede abrir y recibir pedidos. Los que no tienen dueño vinculado los creaste tú mismo arriba.</p>
+        </div>
+      </div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <input id="storeSearch" placeholder="Buscar comercio por nombre o categoría…" autocomplete="off">
+      </div>
+      <div id="storesTable" class="users-list">
+        <div class="empty">Cargando comercios…</div>
+      </div>
+    </div>
+
+    <div id="adminStoreEditBox" class="box" style="display:none;margin-top:18px">
+      <div class="section-head">
+        <div>
+          <h2 id="adminEditStoreTitle">✏️ Editar comercio</h2>
+          <p class="muted">Configura la foto y el horario semanal. Si defines un horario, el comercio aparecerá y desaparecerá de Inicio automáticamente según la hora — el interruptor manual de "abierto/cerrado" del propio comercio deja de usarse.</p>
+        </div>
+        <button type="button" id="btnCerrarEdicionComercio" class="btn">Cerrar</button>
+      </div>
+      <form id="adminStoreEditForm" style="max-width:520px">
+        <div class="field"><label>Nombre del comercio *</label><input id="editStoreName2" required></div>
+        <div class="field"><label>Categoría</label><input id="editStoreCategory2"></div>
+        <div class="field"><label>Teléfono</label><input id="editStorePhone2"></div>
+        <div class="field"><label>Dirección</label><input id="editStoreAddress2"></div>
+        <div class="field"><label>Descripción</label><input id="editStoreDescription2"></div>
+        <div class="field">
+          <label>Foto del comercio</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <img id="editStorePhotoPreview" class="photo-preview" style="display:none">
+            <input id="editStorePhotoInput" type="file" accept="image/*" capture="environment">
+          </div>
+          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
+          <button type="button" id="btnQuitarFotoComercio" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+        </div>
+        <div class="field">
+          <label>Horario semanal</label>
+          <small class="muted">Marca "Cerrado" en los días que no abre. Las horas son en formato 24h (00:00 a 24:00, ej. 8:00 pm = 20:00). Deja todos los días vacíos si prefieres seguir controlando abierto/cerrado manualmente desde el panel del comercio.</small>
+          <div id="editStoreHours" style="display:grid;gap:8px;margin-top:8px"></div>
+        </div>
+        <button type="submit" class="btn primary">Guardar cambios</button>
+      </form>
+    </div>
+
+    <div id="adminStoreProductsBox" class="box" style="display:none;margin-top:18px">
+      <div class="section-head">
+        <div>
+          <h2 id="adminProductsStoreTitle">🍔 Productos</h2>
+          <p class="muted">Publica productos por este comercio mientras su dueño no tiene cuenta o todavía no gestiona su propio catálogo. Un producto solo se ve en Inicio si el comercio está "Activo" y abierto.</p>
+        </div>
+        <button type="button" id="btnCerrarProductosAdmin" class="btn">Cerrar</button>
+      </div>
+      <form id="adminProductForm" style="max-width:480px;margin-bottom:14px">
+        <div class="field"><label>Nombre *</label><input id="adminProdName" required></div>
+        <div class="field"><label>Precio (RD$) *</label><input id="adminProdPrice" type="number" min="0" step="0.01" required></div>
+        <div class="field"><label>Descripción</label><input id="adminProdDescription"></div>
+        <div class="field">
+          <label>Foto del producto</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <img id="adminProdPhotoPreview" class="photo-preview" style="display:none">
+            <input id="adminProdPhotoInput" type="file" accept="image/*" capture="environment">
+          </div>
+          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
+          <button type="button" id="adminBtnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+        </div>
+        <button type="submit" id="adminProdSubmit" class="btn primary">Agregar producto</button>
+        <button type="button" id="adminProdCancelEdit" class="btn" style="display:none">Cancelar edición</button>
+      </form>
+      <div id="adminStoreProductsList" class="grid"><div class="empty">Cargando productos…</div></div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="repartidores" style="display:none">
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>🛵 Repartidores</h2>
+          <p class="muted">Igual que los comercios: un repartidor solo puede tomar entregas cuando su cuenta está "Activa".</p>
+        </div>
+      </div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <input id="driverSearch" placeholder="Buscar repartidor por teléfono o placa…" autocomplete="off">
+      </div>
+      <div id="driversTable" class="users-list">
+        <div class="empty">Cargando repartidores…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="pedidos" style="display:none">
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>📦 Todos los pedidos</h2>
+          <p class="muted">Vista global de pedidos en Firestore. Puedes forzar el estado o quitarle el repartidor a un pedido para resolver una incidencia.</p>
+        </div>
+        <select id="orderStatusFilter">
+          <option value="todos">Todos los estados</option>
+          <option value="created">Recibido</option>
+          <option value="confirmed">Confirmado</option>
+          <option value="preparing">En preparación</option>
+          <option value="ready">Listo para recoger</option>
+          <option value="assigned">Repartidor asignado</option>
+          <option value="picked_up">Recogido</option>
+          <option value="on_the_way">En camino</option>
+          <option value="delivered">Entregado</option>
+          <option value="cancelled">Cancelado</option>
+          <option value="failed">Fallido</option>
+        </select>
+      </div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <input id="orderSearch" placeholder="Buscar por comercio, cliente o ID de pedido…" autocomplete="off">
+      </div>
+      <div id="allOrdersTable" class="users-list">
+        <div class="empty">Cargando pedidos…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="incidencias" style="display:none">
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>🚨 Incidencias</h2>
+          <p class="muted">Pedidos cancelados o fallidos — márcalas como resueltas cuando ya diste seguimiento con el cliente, el comercio o el repartidor.</p>
+        </div>
+        <select id="issueFilter">
+          <option value="pendientes">Pendientes</option>
+          <option value="resueltas">Resueltas</option>
+          <option value="todas">Todas</option>
+        </select>
+      </div>
+      <div id="issuesTable" class="users-list">
+        <div class="empty">No hay incidencias registradas.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="configuracion" style="display:none">
+    <div class="box" style="max-width:480px">
+      <h2>⚙️ Datos del negocio</h2>
+      <p class="muted">Estos son los datos propios de Rapidito, guardados en Firestore — se usan dentro de la app en vez de depender solo de un enlace externo de WhatsApp.</p>
+      <form id="businessConfigForm">
+        <div class="field"><label>Nombre comercial</label><input id="cfgBusinessName" placeholder="Rapidito"></div>
+        <div class="field"><label>Teléfono principal</label><input id="cfgBusinessPhone" placeholder="(849) 573-2222"></div>
+        <div class="field"><label>Correo de soporte</label><input id="cfgBusinessEmail" placeholder="soporte@rapidito.do"></div>
+        <div class="field"><label>Zona de cobertura</label><input id="cfgBusinessArea" placeholder="Sosúa, Puerto Plata"></div>
+        <button type="submit" class="btn primary">Guardar configuración</button>
+      </form>
+    </div>
+  </div>
+</section>

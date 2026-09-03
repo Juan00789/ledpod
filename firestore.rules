@@ -1,0 +1,179 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Defensa en profundidad para el bloqueo de cuentas: el cliente
+    // (auth-service.js) ya cierra la sesión de un usuario bloqueado
+    // apenas se detecta, pero esta función evita que una sesión ya
+    // abierta en el navegador (antes de que el Admin lo bloqueara)
+    // pueda seguir escribiendo datos directamente contra Firestore.
+    //
+    // OJO: si el documento users/{uid} todavía no existe (cuenta
+    // creada en Firebase Auth pero sin perfil en Firestore todavía —
+    // ej. justo durante el registro, o una cuenta creada a mano desde
+    // la consola de Firebase), tratamos eso como "activa" en vez de
+    // negar el permiso. Sin este `exists()`, el `get()` sobre un
+    // documento inexistente hace que TODA la regla falle cerrada, y
+    // el usuario queda autenticado pero sin poder escribir nada en
+    // Firestore — ni su propio perfil, ni un pedido, nada.
+    function accountActive() {
+      return signedIn() && (
+        !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != 'blocked'
+      );
+    }
+
+    function validRole() {
+      return request.resource.data.role in ['cliente', 'comercio', 'repartidor', 'admin'];
+    }
+
+    function validStatus() {
+      return request.resource.data.status in ['active', 'blocked'];
+    }
+
+    match /users/{uid} {
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == 'cliente'
+        && request.resource.data.status == 'active';
+
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Un usuario puede editar sus propios datos, pero nunca cambiar su rol/estado.
+      // El administrador puede gestionar ambos.
+      allow update: if signedIn() && (
+        (
+          request.auth.uid == uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+        )
+        || (
+          isAdmin()
+          && validRole()
+          && validStatus()
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /customers/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin() || (accountActive() && request.auth.uid == uid);
+    }
+
+    match /stores/{storeId} {
+      // El dueño crea su propio comercio (siempre 'pending' — la
+      // aprobación a 'active' la hace el Admin, nunca el propio dueño).
+      // El Admin, en cambio, puede crear un comercio directamente en
+      // cualquier estado y sin dueño todavía (ownerId null) — esto es
+      // lo que permite darle promoción a un negocio en Inicio antes
+      // de que su dueño se registre o tenga el rol 'comercio'.
+      allow create: if isAdmin() || (
+        accountActive()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+      );
+
+      // Lectura pública (sin login) solo para comercios ya aprobados
+      // por el Admin (status 'active') — es lo que alimenta la lista
+      // de comercios en la página de Inicio, visible para cualquier
+      // visitante. Un usuario logueado puede leer cualquier comercio
+      // (lo necesitan Admin y los propios paneles internos).
+      allow read: if signedIn() || resource.data.status == 'active';
+
+      // El dueño puede editar su perfil y su "open" (abierto/cerrado),
+      // pero NUNCA su propio 'status' de aprobación — eso es solo del
+      // Admin. El Admin puede cambiar cualquier campo.
+      allow update: if signedIn() && (
+        (
+          accountActive()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.status == resource.data.status
+        )
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+
+      match /products/{productId} {
+        // Igual que el propio comercio: lectura pública (sin login)
+        // solo si el comercio dueño de este producto está aprobado
+        // (status 'active') — así un visitante sin cuenta puede ver
+        // el menú completo desde Inicio antes de registrarse.
+        allow read: if signedIn()
+          || get(/databases/$(database)/documents/stores/$(storeId)).data.status == 'active';
+        allow write: if signedIn() && (
+          (accountActive() && get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid)
+          || isAdmin()
+        );
+      }
+    }
+
+    match /drivers/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // El repartidor crea/edita su propio perfil, pero nunca su
+      // propio 'status' de aprobación — igual que el comercio.
+      allow create: if accountActive() && request.auth.uid == uid && request.resource.data.status == 'pending';
+      allow update: if signedIn() && (
+        (accountActive() && request.auth.uid == uid && request.resource.data.status == resource.data.status)
+        || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if accountActive() && request.resource.data.customerId == request.auth.uid;
+
+      allow read: if signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.driverId == request.auth.uid
+        || isAdmin()
+        || get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.ownerId == request.auth.uid
+      );
+
+      // MVP: cualquier usuario logueado que YA puede leer el pedido
+      // (cliente dueño, comercio dueño, repartidor asignado o el que
+      // lo está reclamando, o admin) puede actualizarlo. La validación
+      // fina de qué campos puede tocar cada rol vive en el cliente
+      // (orders-service.js) — todavía no está reforzada a nivel de
+      // reglas. Ver README-MVP.md: "reglas finales de Firestore" sigue
+      // pendiente.
+      allow update: if isAdmin() || (accountActive() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.driverId == request.auth.uid
+        || request.resource.data.driverId == request.auth.uid
+        || get(/databases/$(database)/documents/stores/$(resource.data.storeId)).data.ownerId == request.auth.uid
+      ));
+
+      allow delete: if isAdmin();
+
+      match /events/{eventId} {
+        allow read, write: if signedIn();
+      }
+    }
+
+    match /deliveries/{deliveryId} {
+      allow read, write: if signedIn();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /adminSettings/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
