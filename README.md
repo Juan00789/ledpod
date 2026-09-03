@@ -16,3 +16,4 @@ Abre `index.html` en el navegador.
 
 Es una demo frontend: no incluye todavía backend, pagos reales, mapas, autenticación ni asignación real de repartidores.
 # quickie1
+# quickie1
