@@ -138,7 +138,10 @@ async function openStore(storeId, storeName) {
       grid.innerHTML = '<div class="empty">Este comercio todavía no tiene productos.</div>';
       return;
     }
-    grid.innerHTML = products.map((p) => `
+    grid.innerHTML = products.map((p) => {
+      const tieneStock = typeof p.stock === 'number';
+      const agotado = tieneStock && p.stock <= 0;
+      return `
       <article class="card">
         <div class="pic">
           ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '🍽️'}
@@ -146,15 +149,18 @@ async function openStore(storeId, storeName) {
         <h3>${esc(p.name)}</h3>
         <div class="muted">${esc(p.description || '')}</div>
         <div class="price">${money(p.price)}</div>
-        <button type="button" class="add" data-add-product="${p.id}" data-name="${esc(p.name)}" data-price="${p.price}">Agregar</button>
+        ${tieneStock && !agotado && p.stock <= 3 ? `<div class="muted" style="color:#b8860b">Quedan ${p.stock}</div>` : ''}
+        <button type="button" class="add" data-add-product="${p.id}" data-name="${esc(p.name)}" data-price="${p.price}" data-stock="${tieneStock ? p.stock : ''}" ${agotado ? 'disabled style="opacity:.5;cursor:not-allowed"' : ''}>${agotado ? 'Agotado' : 'Agregar'}</button>
       </article>
-    `).join('');
+    `;
+    }).join('');
 
-    grid.querySelectorAll('[data-add-product]').forEach((btn) => {
+    grid.querySelectorAll('[data-add-product]:not([disabled])').forEach((btn) => {
       btn.addEventListener('click', () => addToCart(storeId, storeName, {
         productId: btn.dataset.addProduct,
         name: btn.dataset.name,
-        price: Number(btn.dataset.price)
+        price: Number(btn.dataset.price),
+        stock: btn.dataset.stock === '' ? null : Number(btn.dataset.stock)
       }));
     });
   } catch (err) {
@@ -172,8 +178,15 @@ function addToCart(storeId, storeName, product) {
   cartStore = { id: storeId, name: storeName };
 
   const existente = cart.find((it) => it.productId === product.productId);
-  if (existente) existente.quantity += 1;
-  else cart.push({ ...product, quantity: 1 });
+  if (existente) {
+    if (typeof existente.stock === 'number' && existente.quantity >= existente.stock) {
+      showToast('clientToast', `Solo quedan ${existente.stock} unidades de ${product.name}.`, true);
+      return;
+    }
+    existente.quantity += 1;
+  } else {
+    cart.push({ ...product, quantity: 1 });
+  }
 
   renderCart();
   showToast('clientToast', `${product.name} agregado al carrito.`);
@@ -224,7 +237,13 @@ function renderCart() {
 
   itemsBox.querySelectorAll('[data-qty-up]').forEach((b) => b.addEventListener('click', () => {
     const item = cart.find((it) => it.productId === b.dataset.qtyUp);
-    if (item) item.quantity += 1;
+    if (item) {
+      if (typeof item.stock === 'number' && item.quantity >= item.stock) {
+        showToast('clientToast', `Solo quedan ${item.stock} unidades de ${item.name}.`, true);
+        return;
+      }
+      item.quantity += 1;
+    }
     renderCart();
   }));
   itemsBox.querySelectorAll('[data-qty-down]').forEach((b) => b.addEventListener('click', () => {

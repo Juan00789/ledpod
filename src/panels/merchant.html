@@ -49,6 +49,11 @@
         <div class="field"><label>Categoría</label><input id="prodCategoryInput"></div>
         <div class="field"><label>Descripción</label><input id="prodDescriptionInput"></div>
         <div class="field">
+          <label>Stock (unidades disponibles)</label>
+          <input id="prodStockInput" type="number" min="0" step="1" placeholder="Déjalo vacío = sin límite">
+          <small class="muted">Si pones un número, el producto se marca "Agotado" y no se puede pedir cuando llega a 0 — se descuenta solo cuando confirmas cada pedido. Vacío = no controlas inventario para este producto.</small>
+        </div>
+        <div class="field">
           <label>Foto del producto</label>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <img id="prodPhotoPreview" class="photo-preview" style="display:none">

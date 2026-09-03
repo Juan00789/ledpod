@@ -1,17 +1,17 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapidito — Delivery</title><link rel="icon" href="./favicon.ico"><link rel="stylesheet" href="./src/styles/app.css"></head><body><div class="app"><header><a href="./index.html" class="logo"><img src="./src/assets/logo-horizontal.png" alt="Rapidito"></a><input id="search" class="search" placeholder="Busca un comercio..."><nav class="nav"><a class="btn" href="./login.html">Entrar</a><a class="btn primary" href="./register.html">Crear cuenta</a></nav></header><main class="main">
 
 <section id="storeBrowser">
-  <section class="hero"><div><span class="pill">⚡ RAPIDITO AHORA</span><h1>Lo que quieres.<br>Sin vueltas.</h1><p>Comida y bebidas cerca de ti.</p></div><div style="font-size:80px">🛵</div></section>
+  <section class="hero"><div><span class="pill">⚡ RAPIDITO AHORA</span><span class="clock-pill" id="liveClock" title="Hora actual — los comercios abren y cierran según esta hora">🕒 --:--</span><h1>Lo que quieres.<br>Sin vueltas.</h1><p>Comida y bebidas cerca de ti.</p></div><div class="hero-emoji">🛵</div></section>
   <h2>🔥 Comercios cerca de ti</h2>
-  <p class="muted" style="margin:-8px 0 14px">Solo se muestran los comercios abiertos ahora mismo. Si buscas uno y no aparece, es porque está cerrado en este momento.</p>
+  <p class="muted hero-subtitle">Solo se muestran los comercios abiertos ahora mismo. Si buscas uno y no aparece, es porque está cerrado en este momento.</p>
   <div id="stores" class="grid"></div>
 </section>
 
-<section id="productBrowser" style="display:none">
-  <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0">
+<section id="productBrowser" class="hidden">
+  <div class="section-head product-header-row">
     <div>
       <button type="button" id="btnVolverComercios" class="btn">← Comercios</button>
-      <h2 id="productBrowserTitle" style="display:inline;margin-left:10px">Comercio</h2>
+      <h2 id="productBrowserTitle" class="product-header-title">Comercio</h2>
       <p class="muted" id="productBrowserSubtitle"></p>
     </div>
   </div>
@@ -41,13 +41,13 @@ function renderStores(list) {
     const initial = esc((s.name || '?').trim().charAt(0).toUpperCase());
     const pic = s.photo
       ? `<div class="pic"><img src="${s.photo}" alt="${esc(s.name)}"></div>`
-      : `<div class="pic" style="font-weight:900;color:var(--orange)">${initial}</div>`;
+      : `<div class="pic store-initial">${initial}</div>`;
     const hoursLabel = getTodayHoursLabel(s);
     return `<article class="card" data-store="${s.id}" style="cursor:pointer">
       ${pic}
       <h3>${esc(s.name)}</h3>
       <div class="muted">${esc(s.category || 'Comercio')}${s.description ? ' · ' + esc(s.description) : ''}</div>
-      ${hoursLabel ? `<div class="muted" style="margin-top:2px">🕒 ${esc(hoursLabel)}</div>` : ''}
+      ${hoursLabel ? `<div class="muted hours-label">🕒 ${esc(hoursLabel)}</div>` : ''}
       <button type="button" class="add" data-store="${s.id}" data-name="${esc(s.name)}">Ver menú</button>
     </article>`;
   }).join('');
@@ -89,7 +89,9 @@ function renderProducts(products) {
       <h3>${esc(p.name)}</h3>
       <div class="muted">${esc(p.description || '')}</div>
       <div class="price">${money(p.price)}</div>
-      <a class="add" style="display:block;text-align:center;text-decoration:none" href="./login.html">Agregar</a>
+      ${typeof p.stock === 'number' && p.stock <= 0
+        ? '<div class="add" style="display:block;text-align:center;opacity:.6">Agotado</div>'
+        : '<a class="add" style="display:block;text-align:center;text-decoration:none" href="./login.html">Agregar</a>'}
     </article>
   `).join('');
 }
@@ -111,4 +113,17 @@ watchOpenStores((stores) => {
   console.error(err);
   storesBox.innerHTML = '<div class="empty">No se pudieron cargar los comercios. Intenta de nuevo más tarde.</div>';
 });
+
+// Reloj visible en el hero: para que el cliente entienda POR QUÉ un
+// comercio aparece o desaparece de esta lista (según el horario que
+// le configuró el Admin), tiene que poder ver la hora actual contra
+// la que se está comparando ese horario.
+const liveClock = document.getElementById('liveClock');
+function updateClock() {
+  if (!liveClock) return;
+  const hora = new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  liveClock.textContent = `🕒 ${hora}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
 </script></body></html>

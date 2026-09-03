@@ -108,9 +108,83 @@ export function watchStoreOrders(storeId, callback, onError = console.error) {
 
 // El comercio solo mueve el pedido dentro de su propio tramo
 // (created -> confirmed -> preparing -> ready), o lo cancela.
+//
+// El descuento de inventario pasa AQUÍ, al confirmar — no cuando el
+// cliente hace el pedido — porque las reglas de Firestore solo dejan
+// escribir en `stores/{id}/products/{id}` al dueño del comercio (o al
+// Admin), nunca al cliente. Confirmar es la primera acción del propio
+// comercio sobre el pedido, así que es el punto natural para tocar su
+// propio inventario sin tener que abrirle permiso de escritura de
+// productos a cualquier cliente logueado.
 export async function updateOrderStatusByStore(orderId, status) {
   const permitido = ['confirmed', 'preparing', 'ready', 'cancelled'];
   if (!permitido.includes(status)) throw new Error('Estado no permitido para el comercio');
+
+  if (status === 'confirmed') {
+    await runTransaction(db, async (tx) => {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnap = await tx.get(orderRef);
+      if (!orderSnap.exists()) throw new Error('El pedido ya no existe.');
+      const data = orderSnap.data();
+      if (data.status !== 'created') throw new Error('Este pedido ya fue procesado.');
+
+      const items = (data.items || []).filter((it) => it.productId);
+      const refs = items.map((it) => doc(db, 'stores', data.storeId, 'products', it.productId));
+      const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
+
+      // Primero se validan TODOS los productos (sin escribir nada) —
+      // si a cualquiera le falta stock, la transacción entera falla y
+      // el pedido no queda confirmado a medias.
+      snaps.forEach((snap, i) => {
+        if (!snap.exists()) return;
+        const stock = snap.data().stock;
+        if (typeof stock !== 'number') return; // sin control de inventario
+        const faltante = Number(items[i].quantity || 1) - stock;
+        if (faltante > 0) {
+          throw new Error(`No hay suficiente stock de "${items[i].name}" (quedan ${stock}).`);
+        }
+      });
+
+      snaps.forEach((snap, i) => {
+        if (!snap.exists()) return;
+        const stock = snap.data().stock;
+        if (typeof stock !== 'number') return;
+        tx.update(refs[i], { stock: stock - Number(items[i].quantity || 1), updatedAt: serverTimestamp() });
+      });
+
+      tx.update(orderRef, { status: 'confirmed', updatedAt: serverTimestamp() });
+    });
+    return;
+  }
+
+  if (status === 'cancelled') {
+    // Si el pedido ya había pasado por 'confirmed' (o más adelante),
+    // ya se le descontó stock antes — hay que devolverlo. Si seguía
+    // en 'created', nunca se tocó el inventario y no hay nada que
+    // restaurar.
+    await runTransaction(db, async (tx) => {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnap = await tx.get(orderRef);
+      if (!orderSnap.exists()) throw new Error('El pedido ya no existe.');
+      const data = orderSnap.data();
+
+      if (data.status !== 'created') {
+        const items = (data.items || []).filter((it) => it.productId);
+        const refs = items.map((it) => doc(db, 'stores', data.storeId, 'products', it.productId));
+        const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
+        snaps.forEach((snap, i) => {
+          if (!snap.exists()) return;
+          const stock = snap.data().stock;
+          if (typeof stock !== 'number') return;
+          tx.update(refs[i], { stock: stock + Number(items[i].quantity || 1), updatedAt: serverTimestamp() });
+        });
+      }
+
+      tx.update(orderRef, { status: 'cancelled', updatedAt: serverTimestamp() });
+    });
+    return;
+  }
+
   await updateDoc(doc(db, 'orders', orderId), { status, updatedAt: serverTimestamp() });
 }
 

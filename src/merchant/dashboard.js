@@ -132,7 +132,7 @@ function renderOrders(orders) {
         showToast('merchantToast', 'Estado del pedido actualizado.');
       } catch (err) {
         select.value = previo;
-        showToast('merchantToast', 'No se pudo actualizar el pedido.', true);
+        showToast('merchantToast', err.message || 'No se pudo actualizar el pedido.', true);
         console.error(err);
       } finally {
         select.disabled = false;
@@ -150,7 +150,15 @@ function renderProducts(products) {
     box.innerHTML = '<div class="empty">Todavía no tienes productos.</div>';
     return;
   }
-  box.innerHTML = products.map((p) => `
+  box.innerHTML = products.map((p) => {
+    const tieneStock = typeof p.stock === 'number';
+    const agotado = tieneStock && p.stock <= 0;
+    const stockBadge = !tieneStock
+      ? ''
+      : agotado
+        ? '<span class="role" style="background:#fde0e0;color:#b00020;margin-top:6px;display:inline-block">Agotado</span>'
+        : `<span class="role" style="margin-top:6px;display:inline-block${p.stock <= 3 ? ';background:#fff3d6;color:#8a5a00' : ''}">Stock: ${p.stock}</span>`;
+    return `
     <article class="card">
       <div class="pic">
         ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '🍽️'}
@@ -158,12 +166,14 @@ function renderProducts(products) {
       <h3>${esc(p.name)}</h3>
       <div class="muted">${esc(p.description || '')}</div>
       <div class="price">${money(p.price)}</div>
+      ${stockBadge}
       <div style="display:flex;gap:6px;margin-top:8px">
         <button type="button" class="btn" data-edit="${p.id}" style="flex:1">Editar</button>
         <button type="button" class="btn" data-delete="${p.id}" style="flex:1">Eliminar</button>
       </div>
     </article>
-  `).join('');
+  `;
+  }).join('');
 
   box.querySelectorAll('[data-delete]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -193,6 +203,7 @@ function startEditingProduct(productId) {
   document.getElementById('prodPriceInput').value = product.price ?? '';
   document.getElementById('prodCategoryInput').value = product.category || '';
   document.getElementById('prodDescriptionInput').value = product.description || '';
+  document.getElementById('prodStockInput').value = typeof product.stock === 'number' ? product.stock : '';
 
   const preview = document.getElementById('prodPhotoPreview');
   const btnQuitarFoto = document.getElementById('btnQuitarFoto');
@@ -317,14 +328,16 @@ export function initMerchantDashboard(session) {
       price: document.getElementById('prodPriceInput').value,
       category: document.getElementById('prodCategoryInput').value.trim(),
       description: document.getElementById('prodDescriptionInput').value.trim(),
-      photo: pendingPhotoDataUrl
+      photo: pendingPhotoDataUrl,
+      stock: document.getElementById('prodStockInput').value.trim()
     };
     try {
       if (editingProductId) {
         await updateProduct(currentStore.id, editingProductId, {
           ...payload,
           price: Number(payload.price) || 0,
-          photo: pendingPhotoDataUrl
+          photo: pendingPhotoDataUrl,
+          stock: payload.stock === '' ? null : Math.max(0, Math.floor(Number(payload.stock)) || 0)
         });
         showToast('merchantToast', 'Producto actualizado.');
       } else {

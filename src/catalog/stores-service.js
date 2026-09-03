@@ -194,11 +194,20 @@ export function watchOwnProducts(storeId, callback, onError = console.error) {
 // este proyecto vive en el plan gratuito Spark de Firebase, que no
 // incluye acceso a Cloud Storage (desde feb-2026 requiere Blaze).
 // Si no hay foto, la tarjeta del producto usa un ícono genérico fijo.
-export async function addProduct(storeId, { name, description, price, category, photo, available }) {
+//
+// `stock` (opcional) es un número de unidades disponibles. `null`/
+// `undefined` significa "sin control de inventario" (comportamiento
+// de siempre, siempre disponible) — así los productos ya creados
+// antes de este campo siguen funcionando exactamente igual. Cuando
+// SÍ es un número, se descuenta automáticamente al confirmar cada
+// pedido (ver updateOrderStatusByStore en orders-service.js) y el
+// producto se oculta como "Agotado" en cuanto llega a 0.
+export async function addProduct(storeId, { name, description, price, category, photo, available, stock }) {
   return addDoc(collection(db, 'stores', storeId, 'products'), {
     name, description: description || '', price: Number(price) || 0,
     category: category || '', photo: photo || null,
     available: available !== false,
+    stock: (stock === '' || stock === null || stock === undefined) ? null : Math.max(0, Math.floor(Number(stock)) || 0),
     createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   });
 }
