@@ -1,18 +1,21 @@
-# Quickie Demo
+# Ledpod
 
-Demo frontend de una plataforma de delivery para alimentos y bebidas.
+Sitio de iluminación, revestimientos y pisos SPC en Puerto Plata. La portada pública funciona como catálogo de inspiración y dirige las cotizaciones a WhatsApp; no requiere carrito ni checkout.
 
-## Incluye
-- Marketplace responsive
-- Búsqueda de productos
-- Categorías
-- Carrito funcional
-- Creación simulada de pedido
-- Seguimiento del pedido
-- Sección Quickie Ahora
+## Catálogo público
+- Perfiles y tiras LED, lámparas decorativas y Smart Lighting.
+- Paneles PVC marmolizados y pisos SPC.
+- Inspiración visual, ubicación, mapa, contacto y calificación 5.0 indicada por el negocio.
 
-## Uso
-Abre `index.html` en el navegador.
+Abre `index.html` para revisar la portada. Sus imágenes se cargan desde Unsplash y el mapa desde Google Maps.
 
-Es una demo frontend: no incluye todavía backend, pagos reales, mapas, autenticación ni asignación real de repartidores.
-# quickie1
+## Paneles y Firebase
+Se conservan las pantallas internas existentes, Firebase Authentication, Firestore, reglas, roles, caché offline y herramientas de administración. La configuración Firebase permanece vinculada al proyecto existente; no cambies sus identificadores al desplegar.
+
+Los paneles internos incluyen gestión de cuentas, catálogo, pedidos y repartidores heredada de la aplicación anterior. El sitio público nuevo no expone el flujo de pedidos y vende por cotización directa.
+
+## Despliegue
+Es un sitio estático y puede publicarse desde la raíz en Vercel o Netlify. Para dominios nuevos usados por los paneles internos, agrega el dominio a Firebase Authentication → Authorized domains. Consulta `DEPLOY.md`.
+
+No hay una integración de Cloudinary en el repositorio. Las fotos gestionadas desde los paneles se comprimen en el navegador y se guardan en Firestore; la nueva portada usa imágenes remotas de inspiración.
+# ledpod
