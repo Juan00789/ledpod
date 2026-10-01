@@ -19,3 +19,4 @@ Es un sitio estático y puede publicarse desde la raíz en Vercel o Netlify. Par
 
 No hay una integración de Cloudinary en el repositorio. Las fotos gestionadas desde los paneles se comprimen en el navegador y se guardan en Firestore; la nueva portada usa imágenes remotas de inspiración.
 # ledpod
+# 123

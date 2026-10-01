@@ -1,1 +1,30 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapidito — Iniciar sesión</title><link rel="icon" href="./favicon.ico"><link rel="stylesheet" href="./src/styles/app.css"></head><body><main class="main"><section class="auth box"><div class="logo logo-auth"><img src="./src/assets/logo-full.png" alt="Rapidito"></div><h1>Bienvenido a Rapidito</h1><p class="muted">Inicia sesión para entrar a tu espacio.</p><form id="loginForm"><div class="field"><label>Correo</label><input id="email" type="email" required autocomplete="email"></div><div class="field"><label>Contraseña</label><input id="password" type="password" required autocomplete="current-password"></div><button class="btn primary" style="width:100%;padding:13px">Entrar</button><div id="error" class="error"></div><div id="ok" class="ok"></div></form><p class="muted"><a href="#" id="forgotPassword">¿Olvidaste tu contraseña?</a></p><p class="muted">¿No tienes cuenta? <a href="./register.html">Crear cuenta</a></p><p class="muted auth-contact">¿Necesitas ayuda? <a href="tel:+18495732222">Llámanos al (849) 573-2222</a> <span class="muted">· o por <a href="https://wa.me/18495732222" target="_blank" rel="noopener">WhatsApp</a></span></p></section></main><script type="module">import {login,resetPassword} from './src/auth/login.js';import {watchSession} from './src/auth/auth-service.js';import {mensajeErrorAuth} from './src/shared/utils.js';const form=document.getElementById('loginForm');const error=document.getElementById('error');const ok=document.getElementById('ok');if(sessionStorage.getItem('rapiditoBlocked')){sessionStorage.removeItem('rapiditoBlocked');error.textContent='Tu cuenta fue bloqueada por un administrador. Contacta a soporte.';error.style.display='block'}form.addEventListener('submit',async e=>{e.preventDefault();error.style.display='none';ok.style.display='none';try{await login(email.value,password.value)}catch(err){error.textContent=mensajeErrorAuth(err.code);error.style.display='block'}});document.getElementById('forgotPassword').addEventListener('click',async e=>{e.preventDefault();error.style.display='none';ok.style.display='none';if(!email.value.trim()){error.textContent='Escribe tu correo arriba para poder enviarte el enlace.';error.style.display='block';return}try{await resetPassword(email.value);ok.textContent='Te enviamos un correo para restablecer tu contraseña.';ok.style.display='block'}catch(err){error.textContent=mensajeErrorAuth(err.code);error.style.display='block'}});watchSession(session=>{if(session) location.href='./app.html'},()=>{error.textContent='Tu cuenta fue bloqueada por un administrador. Contacta a soporte.';error.style.display='block'});</script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Ledpod | Iniciar sesión</title>
+	<link rel="stylesheet" href="./src/styles/app.css">
+	<link rel="stylesheet" href="./src/styles/ledpod.css">
+</head>
+<body>
+	<main class="main">
+		<section class="auth box">
+			<a class="logo logo-auth" href="./index.html" aria-label="Ledpod, inicio"><span class="brand-wordmark">LEDPOD</span></a>
+			<h1>Bienvenido a Ledpod</h1>
+			<p class="muted">Inicia sesión para entrar a tu espacio.</p>
+			<form id="loginForm">
+				<div class="field"><label for="email">Correo</label><input id="email" type="email" required autocomplete="email"></div>
+				<div class="field"><label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password"></div>
+				<button class="btn primary" style="width:100%;padding:13px">Entrar</button>
+				<div id="error" class="error" role="alert"></div>
+				<div id="ok" class="ok" role="status"></div>
+			</form>
+			<p class="muted"><a href="#" id="forgotPassword">¿Olvidaste tu contraseña?</a></p>
+			<p class="muted">¿No tienes cuenta? <a href="./register.html">Crear cuenta</a></p>
+			<p class="muted auth-contact">¿Necesitas ayuda? <a href="tel:+18498865556">Llámanos al +1 849-886-5556</a> · <a href="https://wa.me/18498865556" target="_blank" rel="noopener">WhatsApp</a></p>
+		</section>
+	</main>
+	<script type="module" src="./src/auth/login-page.js"></script>
+</body>
+</html>

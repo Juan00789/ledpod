@@ -123,7 +123,7 @@ export async function createStore(ownerId, { name, description, phone, address, 
 // A diferencia de `createStore` (que usa el propio dueño y siempre
 // nace 'pending'), esto lo usa el Admin para dar de alta un comercio
 // él mismo — por ejemplo un negocio que quiere promocionarse en
-// Inicio antes de que su dueño tenga cuenta en Rapidito, o antes de
+// Inicio antes de que su dueño tenga cuenta en Ledpod, o antes de
 // que esa cuenta tenga el rol 'comercio'. Por eso el Admin puede:
 //   - Elegir el estado inicial (activo de una vez, sin esperar
 //     aprobación — el propio Admin es quien lo está aprobando al

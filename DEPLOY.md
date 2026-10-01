@@ -1,4 +1,4 @@
-# Desplegar QuickieRapidito
+# Desplegar Ledpod
 
 ## Qué tipo de proyecto es esto
 El frontend (`index.html`, `login.html`, `register.html`, `app.html` +
@@ -28,7 +28,7 @@ estático, sin build command y sin backend.**
    cambiar roles desde el propio panel Admin.
 4. En Firebase Console → Authentication → Settings → **Authorized
    domains**: agrega el dominio que te dé Vercel/Netlify (ej.
-   `quickierapidito.vercel.app`) — si no lo agregas, el login fallará
+   `ledpod.vercel.app`) — si no lo agregas, el login fallará
    con `auth/unauthorized-domain`.
 
 Las claves en `firebase.js` (`apiKey`, etc.) son claves públicas de
@@ -46,7 +46,7 @@ seguridad real vive en `firestore.rules`.
 **Opción B — CLI:**
 ```bash
 npm install -g vercel
-cd QuickieRapidito
+cd <directorio-del-proyecto>
 vercel --prod
 ```
 `vercel.json` ya está incluido con cabeceras de seguridad básicas y
@@ -62,7 +62,7 @@ caché larga para los assets (logos).
 **Opción B — CLI:**
 ```bash
 npm install -g netlify-cli
-cd QuickieRapidito
+cd <directorio-del-proyecto>
 netlify deploy --prod
 ```
 `netlify.toml` ya está incluido (`publish = "."`, sin build command,

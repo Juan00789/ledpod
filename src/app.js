@@ -146,7 +146,7 @@ watchSession(async session => {
   // El Admin bloqueó esta cuenta mientras la app seguía abierta en el
   // navegador: watchSession ya cerró la sesión, aquí solo avisamos y
   // mandamos de vuelta a login con el mensaje correspondiente.
-  sessionStorage.setItem('rapiditoBlocked', '1');
+  sessionStorage.setItem('ledpodBlocked', '1');
   location.href = './login.html';
 });
 

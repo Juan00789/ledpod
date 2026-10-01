@@ -242,7 +242,7 @@ function renderStores(stores) {
       try {
         const user = await findUserByEmail(email);
         if (!user) {
-          showToast('Ese correo todavía no tiene una cuenta registrada en Rapidito.', true);
+          showToast('Ese correo todavía no tiene una cuenta registrada en Ledpod.', true);
           return;
         }
         await linkStoreOwner(storeId, user.uid);

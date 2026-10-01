@@ -3,7 +3,7 @@
     <div>
       <span class="role">ADMIN CENTRAL</span>
       <h1>Centro de Administración</h1>
-      <p class="muted">Controla usuarios y la operación de Rapidito desde un solo lugar.</p>
+      <p class="muted">Gestiona el catálogo y las cuentas de Ledpod desde un solo lugar.</p>
     </div>
     <div id="adminToast" class="toast" role="status"></div>
   </div>
@@ -61,12 +61,12 @@
       <div class="section-head">
         <div>
           <h2>➕ Registrar comercio nuevo</h2>
-          <p class="muted">Da de alta un comercio tú mismo — sirve para darle promoción en Inicio aunque el dueño todavía no tenga cuenta en Rapidito o su cuenta no tenga el rol "Comercio". Si escribes su correo y ya está registrado, se vincula y su rol se sube a Comercio de una vez; si no está registrado todavía, el comercio queda activo (visible en Inicio) sin dueño, y lo vinculas más abajo cuando esa persona se registre.</p>
+          <p class="muted">Registra el catálogo principal de Ledpod o vincula a su responsable. Si el correo ya tiene cuenta, se asocia y se asigna el rol Comercio; si todavía no está registrado, puedes vincularlo después.</p>
         </div>
       </div>
       <form id="adminCreateStoreForm" style="max-width:520px">
         <div class="field"><label>Nombre del comercio *</label><input id="newStoreName" required></div>
-        <div class="field"><label>Categoría</label><input id="newStoreCategory" placeholder="Ej. Comida rápida"></div>
+        <div class="field"><label>Categoría</label><input id="newStoreCategory" placeholder="Ej. Iluminación o acabados"></div>
         <div class="field"><label>Teléfono</label><input id="newStorePhone"></div>
         <div class="field"><label>Dirección</label><input id="newStoreAddress"></div>
         <div class="field"><label>Descripción</label><input id="newStoreDescription"></div>
@@ -86,7 +86,7 @@
       <div class="section-head">
         <div>
           <h2>🏪 Comercios</h2>
-          <p class="muted">Aprueba un comercio cambiando su estado a "Activo" — solo entonces puede abrir y recibir pedidos. Los que no tienen dueño vinculado los creaste tú mismo arriba.</p>
+          <p class="muted">Aprueba el catálogo cambiando su estado a "Activo". El catálogo publicado queda visible para los visitantes.</p>
         </div>
       </div>
       <div class="filters" style="grid-template-columns:1fr">
@@ -226,11 +226,11 @@
   <div class="dash-section" data-section="configuracion" style="display:none">
     <div class="box" style="max-width:480px">
       <h2>⚙️ Datos del negocio</h2>
-      <p class="muted">Estos son los datos propios de Rapidito, guardados en Firestore — se usan dentro de la app en vez de depender solo de un enlace externo de WhatsApp.</p>
+      <p class="muted">Datos de contacto y cobertura de Ledpod, guardados en Firestore.</p>
       <form id="businessConfigForm">
-        <div class="field"><label>Nombre comercial</label><input id="cfgBusinessName" placeholder="Rapidito"></div>
-        <div class="field"><label>Teléfono principal</label><input id="cfgBusinessPhone" placeholder="(849) 573-2222"></div>
-        <div class="field"><label>Correo de soporte</label><input id="cfgBusinessEmail" placeholder="soporte@rapidito.do"></div>
+        <div class="field"><label>Nombre comercial</label><input id="cfgBusinessName" placeholder="Ledpod"></div>
+        <div class="field"><label>Teléfono principal</label><input id="cfgBusinessPhone" placeholder="+1 849-886-5556"></div>
+        <div class="field"><label>Correo de soporte</label><input id="cfgBusinessEmail" placeholder="correo@dominio.com"></div>
         <div class="field"><label>Zona de cobertura</label><input id="cfgBusinessArea" placeholder="Sosúa, Puerto Plata"></div>
         <button type="submit" class="btn primary">Guardar configuración</button>
       </form>

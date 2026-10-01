@@ -33,8 +33,7 @@ export function showToast(toastId, message, isError = false) {
 }
 
 // Traduce los códigos de error de Firebase Auth a mensajes en
-// español — patrón tomado de ALCANTEC (public/js/auth.js). Antes,
-// login.html/register.html mostraban el mismo mensaje genérico sin
+// español. Antes, login.html/register.html mostraban el mismo mensaje genérico sin
 // importar la causa real (contraseña incorrecta, correo ya
 // registrado, contraseña débil, sin conexión...); ahora cada caso
 // dice algo útil.

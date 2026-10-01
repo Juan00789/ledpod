@@ -17,7 +17,7 @@ const products = [
 const orders = [];
 let nextOrder = 2842;
 
-app.get('/api/health', (_req,res)=>res.json({ok:true,service:'quickie-demo'}));
+app.get('/api/health', (_req,res)=>res.json({ok:true,service:'ledpod'}));
 app.get('/api/products', (_req,res)=>res.json(products));
 app.get('/api/orders/:id', (req,res)=>{
   const order = orders.find(o=>String(o.id)===String(req.params.id));

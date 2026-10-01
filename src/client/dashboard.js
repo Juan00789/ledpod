@@ -22,7 +22,7 @@ import {
 
 export const clientDashboard = {
   role: 'cliente',
-  title: 'Mi Rapidito',
+  title: 'Mi Ledpod',
   sections: ['inicio', 'favoritos', 'pedidos', 'carrito', 'perfil']
 };
 

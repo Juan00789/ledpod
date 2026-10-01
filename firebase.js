@@ -19,8 +19,8 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Offline-first, igual que ALCANTEC: los pedidos, productos y perfiles
-// se leen de caché local si no hay red, y se sincronizan solos al
+// Offline-first: los pedidos, productos y perfiles se leen de caché
+// local si no hay red, y se sincronizan solos al
 // reconectar. persistentMultipleTabManager evita conflictos si el
 // comercio o el repartidor tienen la app abierta en más de una pestaña.
 export const db = initializeFirestore(app, {

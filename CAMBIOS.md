@@ -1,4 +1,4 @@
-# Cambios — QuickieRapidito
+# Cambios — Ledpod
 
 ## Se completaron los 3 paneles que estaban vacíos
 
@@ -10,7 +10,7 @@ de `app.js` tampoco cambiaba de contenido al hacer clic — solo
 renombraba el título de la página.
 
 **Ahora:** los 4 roles tienen un panel funcional, con navegación real
-por pestañas (mismo patrón que el panel admin de ALCANTEC: un
+por pestañas (un
 `data-section` por vista, solo una visible a la vez), conectado a un
 ciclo de pedido completo de punta a punta:
 
@@ -66,7 +66,7 @@ recién creado podía operar nunca, porque no había forma de aprobarlos.
 `firebase.js` no tenía configurada la persistencia de Firestore —
 `getFirestore(app)` a secas. Se cambió a `initializeFirestore` con
 `persistentLocalCache` + `persistentMultipleTabManager`, mismo patrón
-que ya usa ALCANTEC, para que los 4 paneles lean de caché local sin
+para que los 4 paneles lean de caché local sin
 conexión y sincronicen solos al reconectar.
 
 ## `firestore.rules`
@@ -175,7 +175,7 @@ build command.
 **El problema.** El Admin solo podía aprobar comercios que el propio
 dueño ya había creado desde su panel (`src/merchant/dashboard.js`).
 No había forma de dar de alta un negocio si esa persona todavía no
-tenía cuenta en Rapidito, o si su cuenta existía pero seguía con el
+tenía cuenta en Ledpod, o si su cuenta existía pero seguía con el
 rol `cliente` — y por eso tampoco había forma de promocionarlo en
 Inicio con anticipación. Además, `firestore.rules` ni siquiera dejaba
 crear un comercio como Admin: la regla de `create` solo contemplaba
