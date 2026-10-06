@@ -61,7 +61,13 @@ const profileAvatar = document.getElementById('profileAvatar');
 let stopPanel = null;
 
 function titleCase(value) {
-  return String(value || 'cliente').replace(/^./, c => c.toUpperCase());
+  const labels = {
+    cliente: 'Cliente',
+    comercio: 'Empleado de comercio',
+    repartidor: 'Repartidor',
+    admin: 'Administrador'
+  };
+  return labels[value] || String(value || 'cliente').replace(/^./, c => c.toUpperCase());
 }
 
 function renderNav(role) {

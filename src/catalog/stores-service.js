@@ -86,60 +86,41 @@ export function getTodayHoursLabel(store) {
   return `Hoy ${formatHora(dia.open)} – ${cierre}`;
 }
 
-// ---- El comercio propio del usuario logueado ----------------------
-
-// Un dueño de comercio tiene un solo negocio en este MVP (podría
-// extenderse a varios más adelante). Se busca por ownerId porque el
-// ID del documento no es el uid del dueño.
-export async function findOwnStore(ownerId) {
-  const q = query(collection(db, 'stores'), where('ownerId', '==', ownerId));
+// ---- El comercio asignado al empleado logueado -------------------
+//
+// Se conserva `ownerId` como nombre histórico del campo Firestore; ahora
+// contiene el UID del empleado asignado. Cada empleado gestiona un solo
+// comercio en este MVP.
+export async function findOwnStore(employeeId) {
+  const q = query(collection(db, 'stores'), where('ownerId', '==', employeeId));
   const snap = await getDocs(q);
   if (snap.empty) return null;
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 
-export function watchOwnStore(ownerId, callback, onError = console.error) {
-  const q = query(collection(db, 'stores'), where('ownerId', '==', ownerId));
+export function watchOwnStore(employeeId, callback, onError = console.error) {
+  const q = query(collection(db, 'stores'), where('ownerId', '==', employeeId));
   return onSnapshot(q, (snap) => {
     callback(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() });
   }, onError);
 }
 
-export async function createStore(ownerId, { name, description, phone, address, category }) {
-  return addDoc(collection(db, 'stores'), {
-    ownerId,
-    name,
-    description: description || '',
-    phone: phone || '',
-    address: address || '',
-    category: category || '',
-    status: 'pending', // el Admin lo aprueba
-    open: false,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-}
-
 // ---- Registro de comercio desde el Admin ----------------------------
 //
-// A diferencia de `createStore` (que usa el propio dueño y siempre
-// nace 'pending'), esto lo usa el Admin para dar de alta un comercio
-// él mismo — por ejemplo un negocio que quiere promocionarse en
-// Inicio antes de que su dueño tenga cuenta en Ledpod, o antes de
-// que esa cuenta tenga el rol 'comercio'. Por eso el Admin puede:
+// El Admin da de alta los comercios y puede asignarles un empleado.
 //   - Elegir el estado inicial (activo de una vez, sin esperar
 //     aprobación — el propio Admin es quien lo está aprobando al
 //     crearlo) y si nace abierto, para que aparezca ya en Inicio.
-//   - Crear el comercio SIN dueño todavía (`ownerId: null`),
-//     guardando el correo de contacto en `ownerEmail` para vincularlo
-//     después con `linkStoreOwner` en cuanto esa persona se registre.
+//   - Crear el comercio sin empleado todavía (`ownerId: null`),
+//     guardando el correo en `ownerEmail` para asignarlo cuando esa
+//     persona se registre.
 export async function adminCreateStore({
   name, description, phone, address, category,
-  ownerId = null, ownerEmail = '', status = 'active', open = true
+  employeeId = null, employeeEmail = '', status = 'active', open = true
 }) {
   return addDoc(collection(db, 'stores'), {
-    ownerId: ownerId || null,
-    ownerEmail: ownerId ? '' : (ownerEmail || ''),
+    ownerId: employeeId || null,
+    ownerEmail: employeeId ? '' : (employeeEmail || ''),
     name,
     description: description || '',
     phone: phone || '',
@@ -153,13 +134,11 @@ export async function adminCreateStore({
   });
 }
 
-// Vincula un comercio sin dueño (creado por el Admin) a una cuenta de
-// usuario ya existente. El rol de esa cuenta se sube a 'comercio'
-// aparte, desde user-manager.js (changeUserRole) — aquí solo se toca
-// el comercio.
-export async function linkStoreOwner(storeId, ownerId) {
+// Asigna el comercio a una cuenta existente. El rol interno `comercio`
+// se gestiona aparte desde user-manager.js.
+export async function assignStoreEmployee(storeId, employeeId) {
   await updateDoc(doc(db, 'stores', storeId), {
-    ownerId,
+    ownerId: employeeId,
     ownerEmail: '',
     updatedAt: serverTimestamp()
   });

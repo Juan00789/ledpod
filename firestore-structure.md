@@ -28,7 +28,7 @@ createdAt
 
 ## 3. `stores/{storeId}`
 ```text
-ownerId
+ownerId (UID del empleado asignado; nombre histórico del campo)
 name
 description
 phone
@@ -140,8 +140,8 @@ sortOrder
 
 ### Reglas de negocio
 - Cliente: puede registrarse públicamente y leer/escribir solo sus datos y pedidos.
-- Comercio: debe ser aprobado por Admin antes de operar y solo administra sus comercios/productos/pedidos.
+- Comercio (`role: comercio`): representa a un empleado asignado por el Admin a un solo comercio. Puede gestionar sus productos y pedidos; no crea comercios.
 - Repartidor: debe ser aprobado por Admin y solo administra su perfil de repartidor y entregas asignadas.
 - Admin: gestiona usuarios, roles, comercios, repartidores, pedidos, incidencias y configuración.
-- El frontend nunca debe poder convertir un usuario en `admin`, `comercio` o `repartidor` por sí solo.
+- El frontend nunca debe poder convertir un usuario en `admin`, `comercio` o `repartidor` por sí solo; el Admin asigna el rol `comercio` y vincula al empleado mediante el campo histórico `ownerId`.
 - El cambio de rol debe hacerse mediante un proceso administrativo seguro y reglas de Firestore.

@@ -71,17 +71,9 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      // El dueño crea su propio comercio (siempre 'pending' — la
-      // aprobación a 'active' la hace el Admin, nunca el propio dueño).
-      // El Admin, en cambio, puede crear un comercio directamente en
-      // cualquier estado y sin dueño todavía (ownerId null) — esto es
-      // lo que permite darle promoción a un negocio en Inicio antes
-      // de que su dueño se registre o tenga el rol 'comercio'.
-      allow create: if isAdmin() || (
-        accountActive()
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.status == 'pending'
-      );
+      // Solo el Admin crea comercios y asigna a cada uno un empleado
+      // (`ownerId` es el nombre histórico del campo con su UID).
+      allow create: if isAdmin();
 
       // Lectura pública (sin login) solo para comercios ya aprobados
       // por el Admin (status 'active') — es lo que alimenta la lista
@@ -90,7 +82,7 @@ service cloud.firestore {
       // (lo necesitan Admin y los propios paneles internos).
       allow read: if signedIn() || resource.data.status == 'active';
 
-      // El dueño puede editar su perfil y su "open" (abierto/cerrado),
+      // El empleado asignado puede editar el perfil y el estado abierto/cerrado,
       // pero NUNCA su propio 'status' de aprobación — eso es solo del
       // Admin. El Admin puede cambiar cualquier campo.
       allow update: if signedIn() && (
@@ -107,7 +99,7 @@ service cloud.firestore {
 
       match /products/{productId} {
         // Igual que el propio comercio: lectura pública (sin login)
-        // solo si el comercio dueño de este producto está aprobado
+        // solo si el comercio al que pertenece el producto está aprobado
         // (status 'active') — así un visitante sin cuenta puede ver
         // el menú completo desde Inicio antes de registrarse.
         allow read: if signedIn()
@@ -143,7 +135,7 @@ service cloud.firestore {
       );
 
       // MVP: cualquier usuario logueado que YA puede leer el pedido
-      // (cliente dueño, comercio dueño, repartidor asignado o el que
+      // (cliente dueño, empleado asignado al comercio, repartidor asignado o el que
       // lo está reclamando, o admin) puede actualizarlo. La validación
       // fina de qué campos puede tocar cada rol vive en el cliente
       // (orders-service.js) — todavía no está reforzada a nivel de

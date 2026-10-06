@@ -18,9 +18,8 @@ export async function listUsers() {
 }
 
 // Busca una cuenta ya registrada por su correo (sin distinguir
-// mayúsculas/minúsculas). Se usa para vincular un comercio creado por
-// el Admin (sin dueño todavía) a la cuenta real en cuanto esa persona
-// se registra en Ledpod.
+// mayúsculas/minúsculas). Se usa para asignar al comercio un empleado
+// que ya se registró en Ledpod.
 export async function findUserByEmail(email) {
   const target = (email || '').trim().toLowerCase();
   if (!target) return null;

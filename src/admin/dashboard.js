@@ -35,7 +35,7 @@ import {
 } from './user-manager.js';
 import {
   adminCreateStore,
-  linkStoreOwner,
+  assignStoreEmployee,
   updateStoreProfile,
   isStoreOpenNow,
   DIAS,
@@ -62,7 +62,7 @@ const esc = value => String(value ?? '')
 
 const roleLabel = role => ({
   cliente: 'Cliente',
-  comercio: 'Comercio',
+  comercio: 'Empleado de comercio',
   repartidor: 'Repartidor',
   admin: 'Administrador'
 }[role] || role);
@@ -190,9 +190,9 @@ function renderStores(stores) {
     return;
   }
   box.innerHTML = filtered.map((s) => {
-    const ownerHint = s.ownerId
-      ? 'Dueño vinculado'
-      : (s.ownerEmail ? `Sin cuenta vinculada aún · correo: ${esc(s.ownerEmail)}` : 'Sin dueño vinculado — creado por Admin');
+    const employeeHint = s.ownerId
+      ? 'Empleado asignado'
+      : (s.ownerEmail ? `Empleado pendiente de registro · correo: ${esc(s.ownerEmail)}` : 'Sin empleado asignado — creado por Admin');
     return `
     <article class="user-row" style="flex-wrap:wrap">
       <div class="user-main">
@@ -200,7 +200,7 @@ function renderStores(stores) {
         <div>
           <strong>${esc(s.name || 'Sin nombre')}</strong>
           <div class="muted">${esc(s.category || '')} · ${isStoreOpenNow(s) ? 'Abierto' : 'Cerrado'}</div>
-          <small class="muted">${ownerHint}</small>
+          <small class="muted">${employeeHint}</small>
         </div>
       </div>
       <div class="user-controls">
@@ -212,8 +212,8 @@ function renderStores(stores) {
       </div>
       ${!s.ownerId ? `
         <div style="display:flex;gap:8px;flex:1 1 100%;margin-top:2px">
-          <input type="email" class="linkOwnerEmail" data-id="${esc(s.id)}" placeholder="Correo del dueño para vincular" value="${esc(s.ownerEmail || '')}" style="flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:9px">
-          <button type="button" class="btn linkOwnerBtn" data-id="${esc(s.id)}">Vincular cuenta</button>
+          <input type="email" class="linkEmployeeEmail" data-id="${esc(s.id)}" placeholder="Correo del empleado para asignar" value="${esc(s.ownerEmail || '')}" style="flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:9px">
+          <button type="button" class="btn linkEmployeeBtn" data-id="${esc(s.id)}">Asignar empleado</button>
         </div>
       ` : ''}
     </article>
@@ -246,13 +246,13 @@ function renderStores(stores) {
     btn.addEventListener('click', () => openAdminStoreProducts(btn.dataset.id, btn.dataset.name));
   });
 
-  box.querySelectorAll('.linkOwnerBtn').forEach((btn) => {
+  box.querySelectorAll('.linkEmployeeBtn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const storeId = btn.dataset.id;
-      const input = box.querySelector(`.linkOwnerEmail[data-id="${storeId}"]`);
+      const input = box.querySelector(`.linkEmployeeEmail[data-id="${storeId}"]`);
       const email = input?.value.trim();
       if (!email) {
-        showToast('Escribe el correo del dueño primero.', true);
+        showToast('Escribe el correo del empleado primero.', true);
         return;
       }
       btn.disabled = true;
@@ -262,9 +262,9 @@ function renderStores(stores) {
           showToast('Ese correo todavía no tiene una cuenta registrada en Ledpod.', true);
           return;
         }
-        await linkStoreOwner(storeId, user.uid);
+        await assignStoreEmployee(storeId, user.uid);
         if (user.role !== 'comercio') await changeUserRole(user.uid, 'comercio');
-        showToast(`Comercio vinculado a ${user.name || user.email}. Ya aparece en su panel de Comercio.`);
+        showToast(`${user.name || user.email} fue asignado al comercio y ya puede gestionarlo desde su panel.`);
       } catch (err) {
         console.error(err);
         showToast('No se pudo vincular la cuenta.', true);
@@ -497,13 +497,13 @@ function setupAdminCreateStoreForm() {
     event.preventDefault();
     const name = document.getElementById('newStoreName').value.trim();
     if (!name) return;
-    const ownerEmail = document.getElementById('newStoreOwnerEmail').value.trim();
+    const employeeEmail = document.getElementById('newStoreEmployeeEmail').value.trim();
     const visibility = document.getElementById('newStoreVisibility').value;
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {
       let matchedUser = null;
-      if (ownerEmail) matchedUser = await findUserByEmail(ownerEmail);
+      if (employeeEmail) matchedUser = await findUserByEmail(employeeEmail);
       if (matchedUser && matchedUser.role !== 'comercio') {
         await changeUserRole(matchedUser.uid, 'comercio');
       }
@@ -513,17 +513,17 @@ function setupAdminCreateStoreForm() {
         phone: document.getElementById('newStorePhone').value.trim(),
         address: document.getElementById('newStoreAddress').value.trim(),
         description: document.getElementById('newStoreDescription').value.trim(),
-        ownerId: matchedUser ? matchedUser.uid : null,
-        ownerEmail: matchedUser ? '' : ownerEmail,
+        employeeId: matchedUser ? matchedUser.uid : null,
+        employeeEmail: matchedUser ? '' : employeeEmail,
         status: visibility === 'pending' ? 'pending' : 'active',
         open: visibility !== 'pending'
       });
       form.reset();
       document.getElementById('newStoreVisibility').value = 'promo';
-      if (ownerEmail && !matchedUser) {
-        showToast('Comercio creado con promoción activa. Ese correo todavía no tiene cuenta — vincúlalo desde la lista en cuanto se registre.');
+      if (employeeEmail && !matchedUser) {
+        showToast('Comercio creado. Ese correo todavía no tiene cuenta — asígnale el comercio desde la lista en cuanto se registre.');
       } else if (matchedUser) {
-        showToast('Comercio creado y vinculado a la cuenta existente; su rol se subió a Comercio.');
+        showToast('Comercio creado y asignado al empleado. Su rol interno quedó como comercio.');
       } else {
         showToast('Comercio creado correctamente.');
       }
@@ -687,9 +687,7 @@ function setupAdminStoreEditPanel() {
 
 // ---- Productos del comercio, gestionados por el Admin --------------
 // Sirve para publicar productos de un comercio que el Admin creó y
-// que todavía no tiene dueño (o cuyo dueño no gestiona su catálogo
-// todavía) — así el negocio puede mostrarse completo en Inicio desde
-// el primer momento, con promoción, antes de que exista una cuenta.
+// que todavía no tiene un empleado asignado que gestione su catálogo.
 
 let adminProductsStoreId = null;
 let unsubAdminProducts = null;

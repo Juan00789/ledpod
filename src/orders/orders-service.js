@@ -111,7 +111,7 @@ export function watchStoreOrders(storeId, callback, onError = console.error) {
 //
 // El descuento de inventario pasa AQUÍ, al confirmar — no cuando el
 // cliente hace el pedido — porque las reglas de Firestore solo dejan
-// escribir en `stores/{id}/products/{id}` al dueño del comercio (o al
+// escribir en `stores/{id}/products/{id}` al empleado asignado (o al
 // Admin), nunca al cliente. Confirmar es la primera acción del propio
 // comercio sobre el pedido, así que es el punto natural para tocar su
 // propio inventario sin tener que abrirle permiso de escritura de

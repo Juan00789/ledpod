@@ -12,7 +12,7 @@
     <div class="stats">
       <div class="stat"><div class="muted">Usuarios</div><strong id="userCount">0</strong></div>
       <div class="stat"><div class="muted">Clientes</div><strong id="clientCount">0</strong></div>
-      <div class="stat"><div class="muted">Comercios</div><strong id="merchantCount">0</strong></div>
+      <div class="stat"><div class="muted">Empleados de comercio</div><strong id="merchantCount">0</strong></div>
       <div class="stat"><div class="muted">Repartidores</div><strong id="driverCount">0</strong></div>
       <div class="stat"><div class="muted">Admins</div><strong id="adminCount">0</strong></div>
     </div>
@@ -131,7 +131,7 @@
       <div class="section-head">
         <div>
           <h2>👥 Usuarios</h2>
-          <p class="muted">Los nuevos registros nacen como cliente. Desde aquí puedes cambiar su rol.</p>
+          <p class="muted">Los nuevos registros nacen como cliente. Desde aquí puedes asignar el rol de empleado de comercio y vincularlo a un comercio.</p>
         </div>
       </div>
       <div class="filters">
@@ -139,7 +139,7 @@
         <select id="roleFilter">
           <option value="todos">Todos los roles</option>
           <option value="cliente">Clientes</option>
-          <option value="comercio">Comercios</option>
+          <option value="comercio">Empleados de comercio</option>
           <option value="repartidor">Repartidores</option>
           <option value="admin">Administradores</option>
         </select>
@@ -160,7 +160,7 @@
       <div class="section-head">
         <div>
           <h2>➕ Registrar comercio nuevo</h2>
-          <p class="muted">Registra el catálogo principal de Ledpod o vincula a su responsable. Si el correo ya tiene cuenta, se asocia y se asigna el rol Comercio; si todavía no está registrado, puedes vincularlo después.</p>
+          <p class="muted">Registra un comercio y, si deseas, asígnale un empleado. El empleado debe tener una cuenta; si aún no se registró, podrás asignarlo después.</p>
         </div>
       </div>
       <form id="adminCreateStoreForm" style="max-width:520px">
@@ -169,7 +169,7 @@
         <div class="field"><label>Teléfono</label><input id="newStorePhone"></div>
         <div class="field"><label>Dirección</label><input id="newStoreAddress"></div>
         <div class="field"><label>Descripción</label><input id="newStoreDescription"></div>
-        <div class="field"><label>Correo del dueño (opcional)</label><input id="newStoreOwnerEmail" type="email" placeholder="dueno@correo.com"></div>
+        <div class="field"><label>Correo del empleado (opcional)</label><input id="newStoreEmployeeEmail" type="email" placeholder="empleado@correo.com"></div>
         <div class="field">
           <label>Visibilidad inicial</label>
           <select id="newStoreVisibility">
@@ -232,7 +232,7 @@
       <div class="section-head">
         <div>
           <h2 id="adminProductsStoreTitle">🛍️ Productos</h2>
-          <p class="muted">Publica productos por este comercio mientras su dueño no tiene cuenta o todavía no gestiona su propio catálogo. Un producto solo se ve en Inicio si el comercio está "Activo" y abierto.</p>
+          <p class="muted">Publica productos por este comercio mientras no tenga un empleado asignado que gestione su catálogo. Un producto solo se ve en Inicio si el comercio está "Activo" y abierto.</p>
         </div>
         <button type="button" id="btnCerrarProductosAdmin" class="btn">Cerrar</button>
       </div>

@@ -9,7 +9,6 @@ import {
 import { CATEGORIES, categoryIdFromValue } from '../data.js';
 import {
   watchOwnStore,
-  createStore,
   updateStoreProfile,
   setStoreOpen,
   isStoreOpenNow,
@@ -23,7 +22,7 @@ import { watchStoreOrders, updateOrderStatusByStore, ESTADO_LABEL } from '../ord
 
 export const merchantDashboard = {
   role: 'comercio',
-  title: 'Centro del Comercio',
+  title: 'Panel del empleado',
   sections: ['inicio', 'productos', 'pedidos', 'perfil']
 };
 
@@ -263,23 +262,6 @@ export function initMerchantDashboard(session) {
       `<option value="${esc(category.id)}">${esc(category.name)}</option>`
     ).join('');
   }
-
-  document.getElementById('createStoreForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await createStore(uid, {
-        name: document.getElementById('storeNameInput').value.trim(),
-        category: document.getElementById('storeCategoryInput').value.trim(),
-        phone: document.getElementById('storePhoneInput').value.trim(),
-        address: document.getElementById('storeAddressInput').value.trim(),
-        description: document.getElementById('storeDescriptionInput').value.trim()
-      });
-      showToast('merchantToast', 'Comercio creado. Queda pendiente de aprobación.');
-    } catch (err) {
-      console.error(err);
-      showToast('merchantToast', 'No se pudo crear el comercio.', true);
-    }
-  });
 
   document.getElementById('btnToggleOpen')?.addEventListener('click', async () => {
     if (!currentStore) return;
