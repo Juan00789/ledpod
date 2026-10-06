@@ -1,6 +1,7 @@
 // src/merchant/dashboard.js
 import { esc, money, formatDate, showToast } from '../shared/utils.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
+import { CATEGORIES, categoryIdFromValue } from '../data.js';
 import {
   watchOwnStore,
   createStore,
@@ -206,7 +207,7 @@ function startEditingProduct(productId) {
 
   document.getElementById('prodNameInput').value = product.name || '';
   document.getElementById('prodPriceInput').value = product.price ?? '';
-  document.getElementById('prodCategoryInput').value = product.category || '';
+  document.getElementById('prodCategoryInput').value = categoryIdFromValue(product.category);
   document.getElementById('prodDescriptionInput').value = product.description || '';
   document.getElementById('prodStockInput').value = typeof product.stock === 'number' ? product.stock : '';
 
@@ -254,6 +255,12 @@ function startStoreScopedListeners(storeId) {
 
 export function initMerchantDashboard(session) {
   const uid = session.user.uid;
+  const categorySelect = document.getElementById('prodCategoryInput');
+  if (categorySelect) {
+    categorySelect.innerHTML = '<option value="" selected disabled>Selecciona una categoría</option>' + CATEGORIES.map(category =>
+      `<option value="${esc(category.id)}">${esc(category.name)}</option>`
+    ).join('');
+  }
 
   document.getElementById('createStoreForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -340,7 +347,7 @@ export function initMerchantDashboard(session) {
     const payload = {
       name: document.getElementById('prodNameInput').value.trim(),
       price: document.getElementById('prodPriceInput').value,
-      category: document.getElementById('prodCategoryInput').value.trim(),
+      category: categorySelect.value,
       description: document.getElementById('prodDescriptionInput').value.trim(),
       photo: pendingPhotoDataUrl,
       stock: document.getElementById('prodStockInput').value.trim()
