@@ -40,6 +40,7 @@ const navByRole = {
   ],
   admin: [
     ['resumen', '📊', 'Resumen'],
+    ['perfil', '👤', 'Mi perfil'],
     ['catalogo', '🛍️', 'Inventario LEDPOD'],
     ['usuarios', '👥', 'Usuarios'],
     ['comercios', '🏪', 'Comercios'],

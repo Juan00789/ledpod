@@ -37,7 +37,7 @@ function productData({ name, category, description, price, photo, visibility }) 
     description: description.trim(),
     price: Number(price),
     photo: photo || null,
-    visibility: visibility === 'private' ? 'private' : 'public',
+    visibility: visibility === 'public' ? 'public' : 'private',
     updatedAt: serverTimestamp()
   };
 }

@@ -45,8 +45,8 @@
         <div class="field">
           <label for="catalogProductVisibility">Visibilidad</label>
           <select id="catalogProductVisibility">
+            <option value="private" selected>Privado: no aparece en la tienda</option>
             <option value="public">Público: visible en la tienda</option>
-            <option value="private">Privado: solo en el inventario interno</option>
           </select>
         </div>
         <div class="field">
@@ -73,6 +73,35 @@
       <div id="catalogInventoryList" class="grid">
         <div class="empty">Cargando inventario…</div>
       </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="perfil" style="display:none">
+    <div class="box" style="max-width:680px">
+      <div class="section-head">
+        <div>
+          <h2>👤 Mi perfil de administrador</h2>
+          <p class="muted">Actualiza tus datos personales. La foto solo se usa en tu cuenta interna y no aparece en el catálogo público.</p>
+        </div>
+      </div>
+      <form id="adminProfileForm">
+        <div class="field">
+          <label for="adminProfilePhoto">Imagen de perfil</label>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <img id="adminProfilePhotoPreview" class="photo-preview round" style="display:none" alt="Vista previa de imagen de perfil">
+            <input id="adminProfilePhoto" type="file" accept="image/*" capture="user">
+          </div>
+          <small class="muted">Puedes elegir una imagen o tomarla con la cámara. Se optimiza antes de guardarla.</small>
+          <button id="adminProfileRemovePhoto" type="button" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar imagen</button>
+        </div>
+        <div class="field"><label for="adminProfileName">Nombre *</label><input id="adminProfileName" required maxlength="100"></div>
+        <div class="field"><label for="adminProfilePhone">Teléfono</label><input id="adminProfilePhone" type="tel" autocomplete="tel" maxlength="30"></div>
+        <div class="field"><label for="adminProfilePosition">Cargo o área</label><input id="adminProfilePosition" maxlength="80" placeholder="Administrador"></div>
+        <div class="field"><label for="adminProfileBio">Acerca de mí</label><textarea id="adminProfileBio" rows="3" maxlength="300"></textarea></div>
+        <div class="field"><label for="adminProfileEmail">Correo de acceso</label><input id="adminProfileEmail" type="email" disabled></div>
+        <button id="adminProfileSave" type="submit" class="btn primary">Guardar perfil</button>
+        <button id="adminPasswordReset" type="button" class="btn">Enviar enlace para cambiar contraseña</button>
+      </form>
     </div>
   </div>
 

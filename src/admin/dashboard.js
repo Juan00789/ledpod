@@ -7,7 +7,8 @@ import {
   updateDoc,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
-import { db } from '../../firebase.js';
+import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+import { auth, db } from '../../firebase.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
 import { CATEGORIES, PRODUCTS } from '../data.js';
 import {
@@ -1020,7 +1021,104 @@ function setupCatalogInventoryPanel() {
   return unsubscribe;
 }
 
-export function initAdminDashboard() {
+function setupAdminProfile(session) {
+  const form = document.getElementById('adminProfileForm');
+  if (!form) return;
+
+  const profile = session.profile;
+  const nameInput = document.getElementById('adminProfileName');
+  const photoInput = document.getElementById('adminProfilePhoto');
+  const preview = document.getElementById('adminProfilePhotoPreview');
+  const removePhoto = document.getElementById('adminProfileRemovePhoto');
+  const saveButton = document.getElementById('adminProfileSave');
+  let photoURL = profile.photoURL || null;
+
+  nameInput.value = profile.name || session.user.displayName || '';
+  document.getElementById('adminProfilePhone').value = profile.phone || '';
+  document.getElementById('adminProfilePosition').value = profile.position || '';
+  document.getElementById('adminProfileBio').value = profile.bio || '';
+  document.getElementById('adminProfileEmail').value = profile.email || session.user.email || '';
+
+  function renderPhoto() {
+    if (photoURL) {
+      preview.src = photoURL;
+      preview.style.display = 'block';
+      removePhoto.style.display = 'inline-block';
+    } else {
+      preview.removeAttribute('src');
+      preview.style.display = 'none';
+      removePhoto.style.display = 'none';
+    }
+    const avatar = document.getElementById('profileAvatar');
+    if (avatar) {
+      if (photoURL) avatar.innerHTML = `<img src="${esc(photoURL)}" alt="">`;
+      else avatar.textContent = (nameInput.value.trim() || session.user.email || 'A').charAt(0).toUpperCase();
+    }
+  }
+
+  renderPhoto();
+
+  photoInput.addEventListener('change', async () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    try {
+      photoURL = await compressImageToDataUrl(file);
+      renderPhoto();
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || 'No se pudo procesar la imagen.', true);
+      photoInput.value = '';
+    }
+  });
+
+  removePhoto.addEventListener('click', () => {
+    photoURL = null;
+    photoInput.value = '';
+    renderPhoto();
+  });
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    saveButton.disabled = true;
+    try {
+      const name = nameInput.value.trim();
+      await updateDoc(doc(db, 'users', session.user.uid), {
+        name,
+        phone: document.getElementById('adminProfilePhone').value.trim(),
+        position: document.getElementById('adminProfilePosition').value.trim(),
+        bio: document.getElementById('adminProfileBio').value.trim(),
+        photoURL,
+        updatedAt: serverTimestamp()
+      });
+      document.getElementById('profileName').textContent = name || session.user.email || 'Administrador';
+      renderPhoto();
+      showToast('Perfil actualizado.');
+    } catch (error) {
+      console.error(error);
+      showToast('No se pudo guardar el perfil. Revisa las reglas de Firestore.', true);
+    } finally {
+      saveButton.disabled = false;
+    }
+  });
+
+  document.getElementById('adminPasswordReset').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const email = session.user.email;
+      if (!email) throw new Error('La cuenta no tiene un correo de acceso.');
+      await sendPasswordResetEmail(auth, email);
+      showToast(`Enviamos el enlace para cambiar la contraseña a ${email}.`);
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || 'No se pudo enviar el enlace para cambiar la contraseña.', true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+export function initAdminDashboard(session) {
   let latestUsers = [];
   let latestOrders = [];
   let latestStores = [];
@@ -1040,6 +1138,7 @@ export function initAdminDashboard() {
   setupAdminCreateStoreForm();
   setupAdminProductsPanel();
   setupAdminStoreEditPanel();
+  setupAdminProfile(session);
   const unsubscribeCatalog = setupCatalogInventoryPanel();
 
   const unsubscribeOrders = watchAllOrders(orders => {
