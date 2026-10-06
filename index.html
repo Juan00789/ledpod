@@ -84,6 +84,34 @@
     <button class="btn cart-download" id="downloadOrder">Descargar hoja del pedido</button>
   </div>
 </aside>
+
+<dialog class="product-dialog" id="productDialog" aria-labelledby="productDialogName">
+  <div class="product-dialog-panel">
+    <button class="product-dialog-close" type="button" data-product-close aria-label="Cerrar detalles">×</button>
+    <div class="product-detail-grid">
+      <section class="product-detail-gallery" aria-label="Fotos del producto">
+        <div class="product-detail-main">
+          <button class="product-gallery-arrow product-gallery-prev" type="button" data-photo-step="-1" aria-label="Foto anterior">‹</button>
+          <img id="productDetailImage" alt="">
+          <span class="product-detail-no-photo" id="productDetailNoPhoto">📦</span>
+          <span class="product-detail-photo-count" id="productDetailPhotoCount"></span>
+          <button class="product-gallery-arrow product-gallery-next" type="button" data-photo-step="1" aria-label="Foto siguiente">›</button>
+        </div>
+        <div class="product-detail-thumbnails" id="productDetailThumbnails"></div>
+      </section>
+      <section class="product-detail-info">
+        <span class="product-detail-category" id="productDetailCategory"></span>
+        <h2 id="productDialogName"></h2>
+        <p class="product-detail-description" id="productDetailDescription"></p>
+        <strong class="product-detail-price" id="productDetailPrice"></strong>
+        <div class="product-detail-actions">
+          <button class="btn product-detail-add add" id="productDetailAdd" type="button">🛒 Agregar al carrito</button>
+          <button class="btn product-detail-continue" type="button" data-product-close>Seguir viendo</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</dialog>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

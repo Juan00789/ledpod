@@ -14,6 +14,8 @@ let publishedProducts = [];
 let sucursalProducts = [];
 let managedCatalog = false;
 let cart = store.get(), cat = "todos", query = "";
+let activeProduct = null;
+let activeProductPhoto = 0;
 const PRIMARY_STORE_NAME = "sucursal puerto plata";
 
 function normalizeText(value) {
@@ -29,10 +31,50 @@ function renderGrid() {
   const list = products.filter((p) => (cat === "todos" || p.cat === cat) &&
     (!q || `${p.name} ${p.sub} ${p.cat}`.toLowerCase().includes(q)));
   $("#grid").innerHTML = list.length ? list.map((p) => `
-    <article class="card"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">` : p.icon}${p.photoCount > 1 ? `<span class="product-photo-count">${p.photoCount} fotos</span>` : ''}</div>
-    <div class="b"><h4>${esc(p.name)}</h4><small>${esc(CATEGORIES.find((category) => category.id === p.cat)?.name || '')}</small><small>${esc(p.sub || '')}</small></div>
-    <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${p.id}" aria-label="Agregar ${esc(p.name)}">🛒</button></div></article>`).join("")
+    <article class="card product-card">
+      <button class="product-card-preview" type="button" data-product-detail="${esc(p.id)}" aria-label="Ver detalles de ${esc(p.name)}">
+        <span class="ph">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : p.icon}${p.photoCount > 1 ? `<span class="product-photo-count">${p.photoCount} fotos</span>` : ''}</span>
+        <span class="product-card-open">Ver producto <span aria-hidden="true">↗</span></span>
+      </button>
+      <div class="b"><h4>${esc(p.name)}</h4><small>${esc(CATEGORIES.find((category) => category.id === p.cat)?.name || '')}</small><small>${esc(p.sub || '')}</small></div>
+      <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${esc(p.id)}" aria-label="Agregar ${esc(p.name)} al carrito">🛒</button></div>
+    </article>`).join("")
     : `<p class="empty">No encontramos productos. Escríbenos por WhatsApp y te ayudamos.</p>`;
+}
+
+function renderProductDetailPhoto() {
+  if (!activeProduct) return;
+  const photos = activeProduct.photos?.length ? activeProduct.photos : activeProduct.img ? [activeProduct.img] : [];
+  const image = $("#productDetailImage");
+  const noPhoto = $("#productDetailNoPhoto");
+  const hasPhotos = photos.length > 0;
+  image.hidden = !hasPhotos;
+  noPhoto.hidden = hasPhotos;
+  image.src = hasPhotos ? photos[activeProductPhoto] : "";
+  image.alt = hasPhotos ? `${activeProduct.name}, foto ${activeProductPhoto + 1}` : "";
+  $("#productDetailPhotoCount").textContent = photos.length > 1 ? `${activeProductPhoto + 1} / ${photos.length}` : "";
+  document.querySelectorAll("[data-photo-step]").forEach(button => {
+    button.hidden = photos.length < 2;
+  });
+  $("#productDetailThumbnails").innerHTML = photos.length > 1 ? photos.map((photo, index) => `
+    <button class="product-detail-thumb${index === activeProductPhoto ? " is-active" : ""}" type="button"
+      data-product-photo="${index}" aria-label="Ver foto ${index + 1}">
+      <img src="${esc(photo)}" alt="">
+    </button>`).join("") : "";
+}
+
+function openProductDetail(productId) {
+  activeProduct = products.find(product => product.id === productId);
+  if (!activeProduct) return;
+  activeProductPhoto = 0;
+  $("#productDetailCategory").textContent =
+    CATEGORIES.find(category => category.id === activeProduct.cat)?.name || "Producto LEDPOD";
+  $("#productDialogName").textContent = activeProduct.name;
+  $("#productDetailDescription").textContent = activeProduct.sub || "Consulta con nosotros para más información sobre este producto.";
+  $("#productDetailPrice").textContent = money(activeProduct.price);
+  $("#productDetailAdd").dataset.add = activeProduct.id;
+  renderProductDetailPhoto();
+  $("#productDialog").showModal();
 }
 function renderCart() {
   const rows = Object.entries(cart).map(([id, n]) => [products.find((p) => p.id === id), n]).filter(([p]) => p);
@@ -107,10 +149,33 @@ table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:10px 8px
 }
 
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("[data-add],[data-dec],[data-cat]"); if (!t) return;
-  if (t.dataset.add) { change(t.dataset.add, 1); if (t.classList.contains("add")) $("#drawer").classList.add("open"); }
+  const t = e.target.closest("[data-add],[data-dec],[data-cat],[data-product-detail],[data-product-photo],[data-photo-step],[data-product-close]");
+  if (!t) return;
+  if (t.hasAttribute("data-product-close")) {
+    $("#productDialog").close();
+  } else if (t.dataset.productDetail) {
+    openProductDetail(t.dataset.productDetail);
+  } else if (t.dataset.productPhoto !== undefined) {
+    activeProductPhoto = Number(t.dataset.productPhoto);
+    renderProductDetailPhoto();
+  } else if (t.dataset.photoStep) {
+    const photoCount = activeProduct?.photos?.length || (activeProduct?.img ? 1 : 0);
+    if (photoCount > 1) {
+      activeProductPhoto = (activeProductPhoto + Number(t.dataset.photoStep) + photoCount) % photoCount;
+      renderProductDetailPhoto();
+    }
+  } else if (t.dataset.add) {
+    change(t.dataset.add, 1);
+    if (t.classList.contains("add")) {
+      if ($("#productDialog").open) $("#productDialog").close();
+      $("#drawer").classList.add("open");
+    }
+  }
   else if (t.dataset.dec) change(t.dataset.dec, -1);
   else { cat = cat === t.dataset.cat ? "todos" : t.dataset.cat; renderCats(); renderGrid(); $("#productos").scrollIntoView(); }
+});
+$("#productDialog").addEventListener("click", (event) => {
+  if (event.target === $("#productDialog")) $("#productDialog").close();
 });
 $("#allBtn").onclick = () => { cat = "todos"; query = ""; $("#search").value = ""; renderCats(); renderGrid(); };
 $("#search").oninput = (e) => { query = e.target.value; renderGrid(); if (query) $("#productos").scrollIntoView(); };
@@ -150,7 +215,7 @@ setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
 function usePublishedCatalog() {
   const adminProducts = publishedProducts.map((p) => ({
-    id: p.id, img: p.photo, photoCount: getProductPhotos(p).length, cat: p.category, name: p.name,
+    id: p.id, img: getProductPhotos(p)[0] || null, photos: getProductPhotos(p), photoCount: getProductPhotos(p).length, cat: p.category, name: p.name,
     sub: p.description, price: p.price, icon: "🛍️"
   }));
   products = [...adminProducts, ...sucursalProducts];
@@ -210,6 +275,7 @@ watchOpenStores(async (stores) => {
     sucursalProducts = storeProducts.map(product => ({
       id: `sucursal-${primaryStore.id}-${product.id}`,
       img: getProductPhotos(product)[0] || null,
+      photos: getProductPhotos(product),
       photoCount: getProductPhotos(product).length,
       cat: categoryIdFromValue(product.category),
       name: product.name,
