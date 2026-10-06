@@ -43,7 +43,9 @@
             <div class="field"><label for="catalogProductCode">Código / código de barras</label><input id="catalogProductCode" maxlength="50" placeholder="Se genera automáticamente"><small class="muted">Opcional. Si lo dejas vacío, LEDPOD asigna un código único.</small></div>
             <div class="product-editor-row">
               <div class="field"><label for="catalogProductCategory">Categoría *</label>
-                <select id="catalogProductCategory" required></select>
+                <select id="catalogProductCategory" required>
+                  <option value="" selected disabled>Selecciona una categoría</option>
+                </select>
               </div>
               <div class="field"><label for="catalogProductPrice">Precio (RD$) *</label><input id="catalogProductPrice" type="number" min="0" step="0.01" required placeholder="0.00"></div>
             </div>

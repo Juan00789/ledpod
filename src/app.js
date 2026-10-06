@@ -23,7 +23,7 @@ function renderGrid() {
     (!q || `${p.name} ${p.sub} ${p.cat}`.toLowerCase().includes(q)));
   $("#grid").innerHTML = list.length ? list.map((p) => `
     <article class="card"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">` : p.icon}</div>
-    <div class="b"><h4>${esc(p.name)}</h4><small>${esc(p.sub)}</small></div>
+    <div class="b"><h4>${esc(p.name)}</h4><small>${esc(CATEGORIES.find((category) => category.id === p.cat)?.name || '')}</small><small>${esc(p.sub || '')}</small></div>
     <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${p.id}" aria-label="Agregar ${esc(p.name)}">🛒</button></div></article>`).join("")
     : `<p class="empty">No encontramos productos. Escríbenos por WhatsApp y te ayudamos.</p>`;
 }

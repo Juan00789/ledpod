@@ -8,6 +8,7 @@ import {
   getDocs
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 import { db } from '../../firebase.js';
+import { CATEGORIES } from '../data.js';
 
 const inventoryRef = collection(db, 'catalogInventory');
 const publishedRef = collection(db, 'catalogProducts');
@@ -84,12 +85,23 @@ export async function syncPublishedCatalog() {
 }
 
 function productData({ code, name, category, description, price, photo, visibility }, productId) {
+  const cleanName = String(name || '').trim();
+  const categoryValue = String(category || '').trim().toLowerCase();
+  const matchedCategory = CATEGORIES.find(item =>
+    item.id.toLowerCase() === categoryValue || item.name.toLowerCase() === categoryValue
+  );
+  const numericPrice = Number(price);
+
+  if (!cleanName) throw new Error('Escribe el nombre del producto.');
+  if (!matchedCategory) throw new Error('Selecciona una categoría válida del catálogo LEDPOD.');
+  if (!Number.isFinite(numericPrice) || numericPrice < 0) throw new Error('Escribe un precio válido mayor o igual a cero.');
+
   return {
-    code: code?.trim().toUpperCase() || catalogProductCode(productId),
-    name: name.trim(),
-    category,
-    description: description.trim(),
-    price: Number(price),
+    code: String(code || '').trim().toUpperCase() || catalogProductCode(productId),
+    name: cleanName,
+    category: matchedCategory.id,
+    description: String(description || '').trim(),
+    price: numericPrice,
     photo: photo || null,
     visibility: visibility === 'public' ? 'public' : 'private',
     updatedAt: serverTimestamp()

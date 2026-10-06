@@ -893,13 +893,16 @@ function renderCatalogInventory(products) {
 
   list.innerHTML = filteredProducts.map(product => {
     const isPrivate = product.visibility === 'private';
+    const categoryName = CATEGORIES.find(category => category.id === product.category)?.name
+      || product.category
+      || 'Sin categoría';
     return `
     <article class="card product-tile">
       <div class="pic product-tile-photo${product.photo ? '' : ' product-tile-no-photo'}">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '📦'}</div>
       <div class="product-tile-body">
         <h3>${esc(product.name)}</h3>
         <code class="product-code">${esc(product.code || catalogProductCode(product.id))}</code>
-        <span class="product-category">${esc(product.category || 'Sin categoría')}</span>
+        <span class="product-category">${esc(categoryName)}</span>
         <div class="muted">${esc(product.description || '')}</div>
       </div>
       <div class="price">RD$ ${esc(product.price ?? 0)}</div>
@@ -938,7 +941,7 @@ function resetCatalogProductForm() {
 function setupCatalogInventoryPanel() {
   const categorySelect = document.getElementById('catalogProductCategory');
   if (categorySelect) {
-    categorySelect.innerHTML = CATEGORIES.map(category =>
+    categorySelect.innerHTML = '<option value="" selected disabled>Selecciona una categoría</option>' + CATEGORIES.map(category =>
       `<option value="${esc(category.id)}">${esc(category.name)}</option>`
     ).join('');
   }
@@ -1038,7 +1041,10 @@ function setupCatalogInventoryPanel() {
       pendingCatalogPhoto = product.photo || null;
       document.getElementById('catalogProductName').value = product.name || '';
       document.getElementById('catalogProductCode').value = product.code || catalogProductCode(product.id);
-      categorySelect.value = product.category || CATEGORIES[0].id;
+      const savedCategory = CATEGORIES.find(category =>
+        category.id === product.category || category.name.toLowerCase() === String(product.category || '').toLowerCase()
+      );
+      categorySelect.value = savedCategory?.id || '';
       document.getElementById('catalogProductPrice').value = product.price ?? '';
       document.getElementById('catalogProductDescription').value = product.description || '';
       document.getElementById('catalogProductVisibility').value = product.visibility || 'public';
