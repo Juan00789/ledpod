@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   writeBatch,
@@ -28,6 +29,49 @@ export function watchCatalogInventory(callback, onError = console.error) {
   return onSnapshot(inventoryRef, snapshot => {
     callback(snapshot.docs.map(product => ({ id: product.id, ...product.data() })));
   }, onError);
+}
+
+export async function syncPublishedCatalog() {
+  const [inventorySnapshot, publishedSnapshot, catalogState] = await Promise.all([
+    getDocs(inventoryRef),
+    getDocs(publishedRef),
+    getDoc(catalogStateRef)
+  ]);
+  const publishedById = new Map(
+    publishedSnapshot.docs.map(product => [product.id, product.data()])
+  );
+  const writes = [];
+
+  inventorySnapshot.docs.forEach(product => {
+    const data = product.data();
+    const published = publishedById.get(product.id);
+    if (data.visibility === 'private') {
+      if (published) writes.push(batch => batch.delete(doc(publishedRef, product.id)));
+      return;
+    }
+
+    const publicData = { ...data, visibility: 'public' };
+    const needsPublish = !published || [
+      'name', 'category', 'description', 'price', 'photo', 'visibility'
+    ].some(field => (published[field] ?? null) !== (publicData[field] ?? null));
+    if (needsPublish) {
+      writes.push(batch => batch.set(doc(publishedRef, product.id), publicData));
+    }
+  });
+
+  if (inventorySnapshot.size && catalogState.data()?.initialized !== true) {
+    writes.push(batch => batch.set(catalogStateRef, {
+      initialized: true,
+      updatedAt: serverTimestamp()
+    }));
+  }
+
+  for (let offset = 0; offset < writes.length; offset += 450) {
+    const batch = writeBatch(db);
+    writes.slice(offset, offset + 450).forEach(write => write(batch));
+    await batch.commit();
+  }
+  return writes.length;
 }
 
 function productData({ name, category, description, price, photo, visibility }) {

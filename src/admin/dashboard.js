@@ -15,6 +15,7 @@ import {
   addCatalogProduct,
   deleteCatalogProduct,
   seedCatalogProducts,
+  syncPublishedCatalog,
   updateCatalogProduct,
   watchCatalogInventory
 } from '../catalog/public-catalog.js';
@@ -914,6 +915,10 @@ function setupCatalogInventoryPanel() {
   const unsubscribe = watchCatalogInventory(renderCatalogInventory, error => {
     console.error(error);
     if (list) list.innerHTML = '<div class="error" style="display:block">No se pudo cargar el inventario. Revisa Firebase y las reglas de Firestore.</div>';
+  });
+  syncPublishedCatalog().catch(error => {
+    console.error('No se pudo sincronizar el inventario público de LEDPOD:', error);
+    showToast('No se pudo sincronizar el catálogo público. Revisa Firebase y las reglas de Firestore.', true);
   });
 
   document.getElementById('catalogSeedDefaults')?.addEventListener('click', async event => {

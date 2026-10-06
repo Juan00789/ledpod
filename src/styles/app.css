@@ -28,3 +28,77 @@
 .dash-section+.dash-section{margin-top:0}
 .panel-page>.dash-section{margin-top:6px}
 @media(max-width:800px){.app-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;padding:14px}.side-nav{display:grid;grid-template-columns:repeat(2,1fr)}.sidebar-bottom{display:flex;gap:8px}.content{padding:16px}.filters{grid-template-columns:1fr}.user-row{align-items:flex-start;flex-direction:column}.user-controls{width:100%;justify-content:flex-start}.user-controls select{flex:1}.page-heading{margin-bottom:14px}}
+
+/* Keep every authenticated role and tab on the LEDPOD storefront palette. */
+.app-shell{
+  --orange:#ffc21a;
+  --ink:#f4f5f7;
+  --muted:#9aa3b2;
+  --bg:#0d0f14;
+  --line:#262c38;
+  background:var(--bg);
+  color:var(--ink);
+}
+.app-shell .sidebar{
+  background:#101319;
+  border-color:var(--line);
+}
+.app-shell .brand{
+  color:var(--ink);
+  text-decoration:none;
+}
+.app-shell .brand span{color:var(--orange)}
+.app-shell .profile-mini,
+.app-shell .box,
+.app-shell .card,
+.app-shell .stat,
+.app-shell .user-row{
+  background:#161a22;
+  border-color:var(--line);
+  color:var(--ink);
+}
+.app-shell .profile-mini small,
+.app-shell .muted{color:var(--muted)}
+.app-shell .profile-avatar,
+.app-shell .avatar{background:var(--orange);color:#111}
+.app-shell .side-link{color:var(--muted)}
+.app-shell .side-link:hover,
+.app-shell .side-link.active{background:#262c38;color:var(--orange)}
+.app-shell .side-link.danger{color:#ff8e8e}
+.app-shell .sidebar-bottom{border-color:var(--line)}
+.app-shell .field input,
+.app-shell .field select,
+.app-shell .field textarea,
+.app-shell .filters input,
+.app-shell .filters select,
+.app-shell .user-controls select{
+  background:#0f1218;
+  border-color:var(--line);
+  color:var(--ink);
+}
+.app-shell .field input::placeholder,
+.app-shell .filters input::placeholder{color:#737b88}
+.app-shell .field input:focus,
+.app-shell .field select:focus,
+.app-shell .field textarea:focus,
+.app-shell .filters input:focus,
+.app-shell .filters select:focus,
+.app-shell .user-controls select:focus{
+  outline:2px solid rgba(255,194,26,.25);
+  border-color:var(--orange);
+}
+.app-shell .btn{background:#262c38;color:var(--ink)}
+.app-shell .btn.primary{background:var(--orange);color:#111}
+.app-shell .role{background:#262c38;color:var(--orange);opacity:1}
+.app-shell .empty{border-color:var(--line);color:var(--muted)}
+.app-shell .toast{background:#17321f;color:#b9f3c8}
+.app-shell .toast-error{background:#3a161a;color:#ffb3b3}
+.app-shell .error{background:#3a161a;color:#ffb3b3}
+.app-shell .ok{background:#142c1c;color:#b9f3c8}
+
+@media(max-width:800px){
+  .app-shell .sidebar{border-bottom:1px solid var(--line)}
+  .app-shell .side-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app-shell .sidebar-bottom{border-top-color:var(--line)}
+  .app-shell .content{padding:16px}
+}
