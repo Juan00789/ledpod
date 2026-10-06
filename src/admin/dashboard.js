@@ -200,7 +200,7 @@ function renderStores(stores) {
           ${ESTADOS_COMERCIO.map((e) => `<option value="${e}" ${e === s.status ? 'selected' : ''}>${ESTADOS_COMERCIO_LABEL[e]}</option>`).join('')}
         </select>
         <button type="button" class="btn adminEditStore" data-id="${esc(s.id)}">✏️ Editar perfil</button>
-        <button type="button" class="btn adminViewProducts" data-id="${esc(s.id)}" data-name="${esc(s.name || '')}">🍔 Productos</button>
+        <button type="button" class="btn adminViewProducts" data-id="${esc(s.id)}" data-name="${esc(s.name || '')}">🛍️ Productos</button>
       </div>
       ${!s.ownerId ? `
         <div style="display:flex;gap:8px;flex:1 1 100%;margin-top:2px">
@@ -694,7 +694,7 @@ function openAdminStoreProducts(storeId, storeName) {
   resetAdminProductForm();
   const box = document.getElementById('adminStoreProductsBox');
   const title = document.getElementById('adminProductsStoreTitle');
-  if (title) title.textContent = `🍔 Productos de ${storeName || 'este comercio'}`;
+  if (title) title.textContent = `🛍️ Productos de ${storeName || 'este comercio'}`;
   if (box) {
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -871,6 +871,7 @@ function renderCatalogInventory(products) {
       <div class="price">RD$ ${esc(product.price ?? 0)}</div>
       <small class="role">${product.visibility === 'private' ? 'Privado' : 'Público'}</small>
       <div style="display:flex;gap:6px;margin-top:8px">
+        ${product.visibility === 'private' ? `<button type="button" class="btn catalogProductPublish" data-id="${esc(product.id)}" style="flex:1">Publicar en tienda</button>` : ''}
         <button type="button" class="btn catalogProductEdit" data-id="${esc(product.id)}" style="flex:1">Editar</button>
         <button type="button" class="btn catalogProductDelete" data-id="${esc(product.id)}" style="flex:1">Eliminar</button>
       </div>
@@ -955,8 +956,24 @@ function setupCatalogInventoryPanel() {
   document.getElementById('catalogProductCancel')?.addEventListener('click', resetCatalogProductForm);
 
   list?.addEventListener('click', async event => {
+    const publishButton = event.target.closest('.catalogProductPublish');
     const editButton = event.target.closest('.catalogProductEdit');
     const deleteButton = event.target.closest('.catalogProductDelete');
+    if (publishButton) {
+      const product = catalogProducts.find(item => item.id === publishButton.dataset.id);
+      if (!product) return;
+      publishButton.disabled = true;
+      try {
+        await updateCatalogProduct(product.id, { ...product, visibility: 'public' });
+        showToast('Producto publicado en la tienda.');
+      } catch (error) {
+        console.error(error);
+        showToast('No se pudo publicar el producto. Revisa las reglas de Firestore.', true);
+      } finally {
+        publishButton.disabled = false;
+      }
+      return;
+    }
     if (editButton) {
       const product = catalogProducts.find(item => item.id === editButton.dataset.id);
       if (!product) return;
@@ -1006,7 +1023,9 @@ function setupCatalogInventoryPanel() {
     try {
       if (editingCatalogProductId) {
         await updateCatalogProduct(editingCatalogProductId, product);
-        showToast('Producto actualizado.');
+        showToast(product.visibility === 'public'
+          ? 'Producto actualizado y publicado en la tienda.'
+          : 'Producto actualizado y guardado en el inventario privado.');
       } else {
         await addCatalogProduct(product);
         showToast(product.visibility === 'public' ? 'Producto publicado en la tienda.' : 'Producto guardado en el inventario privado.');

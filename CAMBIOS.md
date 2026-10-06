@@ -195,7 +195,7 @@ crear un comercio como Admin: la regla de `create` solo contemplaba
 - **Vincular cuenta**: cada comercio sin dueño en la lista muestra un
   campo de correo + botón para vincularlo en cuanto esa persona sí se
   registre (mismo efecto: `ownerId` + rol subido a `comercio`).
-- **🍔 Productos**: cada comercio de la lista tiene un botón que abre
+- **🛍️ Productos**: cada comercio de la lista tiene un botón que abre
   un mini-gestor de productos (agregar/editar/eliminar — nombre,
   precio, emoji, descripción), para que el Admin pueda publicar el
   catálogo de un comercio que todavía no tiene dueño gestionándolo.

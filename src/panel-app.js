@@ -28,7 +28,7 @@ const navByRole = {
   ],
   comercio: [
     ['inicio', '🏪', 'Inicio'],
-    ['productos', '🍔', 'Productos'],
+    ['productos', '🛍️', 'Productos'],
     ['pedidos', '📦', 'Pedidos'],
     ['perfil', '👤', 'Perfil']
   ],

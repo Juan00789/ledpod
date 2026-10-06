@@ -83,8 +83,6 @@ $("#dots").onclick = (e) => { if (e.target.dataset.s) showSlide(+e.target.datase
 setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
 function usePublishedCatalog() {
-  // Los productos públicos de Firestore son la fuente del catálogo cuando existen.
-  // Si todavía no hay publicaciones, conservamos el catálogo visual incluido en el proyecto.
   products = publishedProducts.map((p) => ({
     id: p.id, img: p.photo, cat: p.category, name: p.name,
     sub: p.description, price: p.price, icon: "🛍️"
@@ -92,18 +90,27 @@ function usePublishedCatalog() {
   renderGrid();
   renderCart();
   if (!publishedProducts.length) {
-    products = DEFAULT_PRODUCTS;
-    renderGrid();
-    $("#catalogStatus").textContent = "Todavía no hay productos publicados. Mostrando el catálogo base.";
+    $("#catalogStatus").textContent = "Todavía no hay productos públicos. En el panel Admin, cambia la visibilidad del producto a Público para mostrarlo aquí.";
     $("#catalogStatus").hidden = false;
   } else {
     $("#catalogStatus").hidden = true;
   }
 }
 
+function useDefaultCatalog() {
+  products = DEFAULT_PRODUCTS;
+  renderGrid();
+  renderCart();
+  $("#catalogStatus").hidden = true;
+}
+
 watchCatalogProducts((items) => {
   publishedProducts = items;
-  if (managedCatalog) usePublishedCatalog();
+  if (managedCatalog || publishedProducts.length) {
+    usePublishedCatalog();
+  } else {
+    useDefaultCatalog();
+  }
 }, (error) => {
   console.error("No se pudo cargar el catálogo LEDPOD:", error);
   const status = $("#catalogStatus");
@@ -112,13 +119,10 @@ watchCatalogProducts((items) => {
 });
 watchCatalogState((initialized) => {
   managedCatalog = initialized;
-  if (managedCatalog) {
+  if (managedCatalog || publishedProducts.length) {
     usePublishedCatalog();
   } else {
-    products = DEFAULT_PRODUCTS;
-    renderGrid();
-    renderCart();
-    $("#catalogStatus").hidden = true;
+    useDefaultCatalog();
   }
 }, (error) => {
   console.error("No se pudo comprobar el estado del catálogo LEDPOD:", error);
