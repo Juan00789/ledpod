@@ -17,6 +17,7 @@ import {
   seedCatalogProducts,
   syncPublishedCatalog,
   updateCatalogProduct,
+  catalogProductCode,
   watchCatalogInventory
 } from '../catalog/public-catalog.js';
 import {
@@ -853,34 +854,64 @@ function setupAdminProductsPanel() {
 let catalogProducts = [];
 let editingCatalogProductId = null;
 let pendingCatalogPhoto = null;
+let activeInventoryVisibility = 'public';
 
 function renderCatalogInventory(products) {
   catalogProducts = products;
   const list = document.getElementById('catalogInventoryList');
   const seedButton = document.getElementById('catalogSeedDefaults');
   if (!list) return;
+  const publicProducts = products.filter(product => product.visibility !== 'private');
+  const privateProducts = products.filter(product => product.visibility === 'private');
+  const publicTab = document.getElementById('catalogPublicTab');
+  const privateTab = document.getElementById('catalogPrivateTab');
+  const searchInput = document.getElementById('catalogProductSearch');
+  const query = searchInput?.value.trim().toLowerCase() || '';
+  const selectedProducts = activeInventoryVisibility === 'public' ? publicProducts : privateProducts;
+  const filteredProducts = selectedProducts.filter(product => {
+    const code = product.code || catalogProductCode(product.id);
+    return `${code} ${product.id} ${product.name || ''} ${product.category || ''}`.toLowerCase().includes(query);
+  });
+
   if (seedButton) seedButton.style.display = products.length ? 'none' : 'inline-block';
-  if (!products.length) {
-    list.innerHTML = '<div class="empty">El inventario está vacío. Puedes agregar un producto o importar el catálogo que ya tiene fotos.</div>';
+  document.getElementById('catalogPublicCount').textContent = publicProducts.length;
+  document.getElementById('catalogPrivateCount').textContent = privateProducts.length;
+  for (const [tab, isActive] of [[publicTab, activeInventoryVisibility === 'public'], [privateTab, activeInventoryVisibility === 'private']]) {
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+  }
+
+  if (!filteredProducts.length) {
+    const emptyMessage = query
+      ? 'No encontramos productos con ese código o nombre.'
+      : activeInventoryVisibility === 'public'
+        ? 'No hay productos públicos todavía. Cambia un producto privado a público para mostrarlo en Inicio.'
+        : 'No hay productos privados. Los productos privados no aparecen en la tienda.';
+    list.innerHTML = `<div class="empty">${emptyMessage}</div>`;
     return;
   }
-  list.innerHTML = products.map(product => `
+
+  list.innerHTML = filteredProducts.map(product => {
+    const isPrivate = product.visibility === 'private';
+    return `
     <article class="card product-tile">
       <div class="pic product-tile-photo${product.photo ? '' : ' product-tile-no-photo'}">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '📦'}</div>
       <div class="product-tile-body">
         <h3>${esc(product.name)}</h3>
+        <code class="product-code">${esc(product.code || catalogProductCode(product.id))}</code>
         <span class="product-category">${esc(product.category || 'Sin categoría')}</span>
         <div class="muted">${esc(product.description || '')}</div>
       </div>
       <div class="price">RD$ ${esc(product.price ?? 0)}</div>
-      <span class="product-stock${product.visibility === 'private' ? ' product-stock-empty' : ''}">${product.visibility === 'private' ? 'Privado' : 'Publicado'}</span>
+      <span class="product-stock${isPrivate ? ' product-stock-empty' : ''}">${isPrivate ? 'Privado' : 'Publicado'}</span>
       <div class="product-tile-actions">
-        ${product.visibility === 'private' ? `<button type="button" class="btn primary catalogProductPublish" data-id="${esc(product.id)}">Publicar</button>` : ''}
+        <button type="button" class="btn ${isPrivate ? 'primary' : ''} catalogProductVisibility" data-id="${esc(product.id)}" data-visibility="${isPrivate ? 'public' : 'private'}">${isPrivate ? 'Publicar' : 'Pasar a privado'}</button>
         <button type="button" class="btn catalogProductEdit" data-id="${esc(product.id)}">Editar</button>
         <button type="button" class="btn catalogProductDelete" data-id="${esc(product.id)}">Eliminar</button>
       </div>
     </article>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function resetCatalogProductForm() {
@@ -917,6 +948,17 @@ function setupCatalogInventoryPanel() {
   const preview = document.getElementById('catalogProductPhotoPreview');
   const photoInput = document.getElementById('catalogProductPhoto');
   const removePhoto = document.getElementById('catalogProductRemovePhoto');
+  document.getElementById('catalogPublicTab')?.addEventListener('click', () => {
+    activeInventoryVisibility = 'public';
+    renderCatalogInventory(catalogProducts);
+  });
+  document.getElementById('catalogPrivateTab')?.addEventListener('click', () => {
+    activeInventoryVisibility = 'private';
+    renderCatalogInventory(catalogProducts);
+  });
+  document.getElementById('catalogProductSearch')?.addEventListener('input', () => {
+    renderCatalogInventory(catalogProducts);
+  });
   const unsubscribe = watchCatalogInventory(renderCatalogInventory, error => {
     console.error(error);
     if (list) list.innerHTML = '<div class="error" style="display:block">No se pudo cargar el inventario. Revisa Firebase y las reglas de Firestore.</div>';
@@ -968,21 +1010,24 @@ function setupCatalogInventoryPanel() {
   document.getElementById('catalogProductCancel')?.addEventListener('click', resetCatalogProductForm);
 
   list?.addEventListener('click', async event => {
-    const publishButton = event.target.closest('.catalogProductPublish');
+    const visibilityButton = event.target.closest('.catalogProductVisibility');
     const editButton = event.target.closest('.catalogProductEdit');
     const deleteButton = event.target.closest('.catalogProductDelete');
-    if (publishButton) {
-      const product = catalogProducts.find(item => item.id === publishButton.dataset.id);
+    if (visibilityButton) {
+      const product = catalogProducts.find(item => item.id === visibilityButton.dataset.id);
       if (!product) return;
-      publishButton.disabled = true;
+      visibilityButton.disabled = true;
       try {
-        await updateCatalogProduct(product.id, { ...product, visibility: 'public' });
-        showToast('Producto publicado en la tienda.');
+        const visibility = visibilityButton.dataset.visibility;
+        await updateCatalogProduct(product.id, { ...product, visibility });
+        showToast(visibility === 'public'
+          ? 'Producto publicado en la tienda.'
+          : 'Producto movido al inventario privado.');
       } catch (error) {
         console.error(error);
-        showToast('No se pudo publicar el producto. Revisa las reglas de Firestore.', true);
+        showToast('No se pudo cambiar la visibilidad. Revisa las reglas de Firestore.', true);
       } finally {
-        publishButton.disabled = false;
+        visibilityButton.disabled = false;
       }
       return;
     }
@@ -992,6 +1037,7 @@ function setupCatalogInventoryPanel() {
       editingCatalogProductId = product.id;
       pendingCatalogPhoto = product.photo || null;
       document.getElementById('catalogProductName').value = product.name || '';
+      document.getElementById('catalogProductCode').value = product.code || catalogProductCode(product.id);
       categorySelect.value = product.category || CATEGORIES[0].id;
       document.getElementById('catalogProductPrice').value = product.price ?? '';
       document.getElementById('catalogProductDescription').value = product.description || '';
@@ -1028,6 +1074,7 @@ function setupCatalogInventoryPanel() {
     event.preventDefault();
     const product = {
       name: document.getElementById('catalogProductName').value,
+      code: document.getElementById('catalogProductCode').value,
       category: categorySelect.value,
       price: document.getElementById('catalogProductPrice').value,
       description: document.getElementById('catalogProductDescription').value,
@@ -1047,7 +1094,7 @@ function setupCatalogInventoryPanel() {
       resetCatalogProductForm();
     } catch (error) {
       console.error(error);
-      showToast('No se pudo guardar el producto. Revisa los datos y las reglas de Firestore.', true);
+      showToast(error.message || 'No se pudo guardar el producto. Revisa los datos y las reglas de Firestore.', true);
     }
   });
 

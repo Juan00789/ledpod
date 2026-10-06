@@ -13,6 +13,11 @@ const inventoryRef = collection(db, 'catalogInventory');
 const publishedRef = collection(db, 'catalogProducts');
 const catalogStateRef = doc(db, 'catalogSettings', 'state');
 
+export function catalogProductCode(productId) {
+  const normalizedId = String(productId).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return `LED-${normalizedId.slice(-8)}`;
+}
+
 export function watchCatalogProducts(callback, onError = console.error) {
   return onSnapshot(publishedRef, snapshot => {
     callback(snapshot.docs.map(product => ({ id: product.id, ...product.data() })));
@@ -50,9 +55,13 @@ export async function syncPublishedCatalog() {
       return;
     }
 
-    const publicData = { ...data, visibility: 'public' };
+    const publicData = {
+      ...data,
+      code: data.code || catalogProductCode(product.id),
+      visibility: 'public'
+    };
     const needsPublish = !published || [
-      'name', 'category', 'description', 'price', 'photo', 'visibility'
+      'code', 'name', 'category', 'description', 'price', 'photo', 'visibility'
     ].some(field => (published[field] ?? null) !== (publicData[field] ?? null));
     if (needsPublish) {
       writes.push(batch => batch.set(doc(publishedRef, product.id), publicData));
@@ -74,8 +83,9 @@ export async function syncPublishedCatalog() {
   return writes.length;
 }
 
-function productData({ name, category, description, price, photo, visibility }) {
+function productData({ code, name, category, description, price, photo, visibility }, productId) {
   return {
+    code: code?.trim().toUpperCase() || catalogProductCode(productId),
     name: name.trim(),
     category,
     description: description.trim(),
@@ -84,6 +94,17 @@ function productData({ name, category, description, price, photo, visibility }) 
     visibility: visibility === 'public' ? 'public' : 'private',
     updatedAt: serverTimestamp()
   };
+}
+
+async function ensureUniqueProductCode(code, excludedProductId = '') {
+  const inventory = await getDocs(inventoryRef);
+  const duplicate = inventory.docs.find(product => {
+    if (product.id === excludedProductId) return false;
+    const data = product.data();
+    const existingCode = String(data.code || catalogProductCode(product.id)).trim();
+    return existingCode.toUpperCase() === code.toUpperCase();
+  });
+  if (duplicate) throw new Error('Ese código ya está asignado a otro producto.');
 }
 
 function syncPublishedProduct(batch, productId, product) {
@@ -96,9 +117,11 @@ function syncPublishedProduct(batch, productId, product) {
 }
 
 export async function addCatalogProduct(fields) {
-  const batch = writeBatch(db);
   const productRef = doc(inventoryRef);
-  const data = { ...productData(fields), createdAt: serverTimestamp() };
+  const data = productData(fields, productRef.id);
+  await ensureUniqueProductCode(data.code);
+  const batch = writeBatch(db);
+  data.createdAt = serverTimestamp();
   batch.set(productRef, data);
   syncPublishedProduct(batch, productRef.id, data);
   batch.set(catalogStateRef, { initialized: true, updatedAt: serverTimestamp() });
@@ -107,8 +130,9 @@ export async function addCatalogProduct(fields) {
 }
 
 export async function updateCatalogProduct(productId, fields) {
+  const data = productData(fields, productId);
+  await ensureUniqueProductCode(data.code, productId);
   const batch = writeBatch(db);
-  const data = productData(fields);
   batch.update(doc(db, 'catalogInventory', productId), data);
   syncPublishedProduct(batch, productId, data);
   batch.set(catalogStateRef, { initialized: true, updatedAt: serverTimestamp() });
@@ -133,13 +157,14 @@ export async function seedCatalogProducts(products) {
     const productRef = doc(inventoryRef, product.id);
     const data = {
       ...productData({
+        code: product.code,
         name: product.name,
         category: product.cat,
         description: product.sub,
         price: product.price,
         photo: product.img,
         visibility: 'public'
-      }),
+      }, product.id),
       createdAt: serverTimestamp()
     };
     batch.set(productRef, data);

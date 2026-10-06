@@ -40,6 +40,7 @@
         <div class="product-editor-grid">
           <div class="product-editor-fields">
             <div class="field"><label for="catalogProductName">Nombre del producto *</label><input id="catalogProductName" required maxlength="100" placeholder="Ej. Tira LED 5050"></div>
+            <div class="field"><label for="catalogProductCode">Código / código de barras</label><input id="catalogProductCode" maxlength="50" placeholder="Se genera automáticamente"><small class="muted">Opcional. Si lo dejas vacío, LEDPOD asigna un código único.</small></div>
             <div class="product-editor-row">
               <div class="field"><label for="catalogProductCategory">Categoría *</label>
                 <select id="catalogProductCategory" required></select>
@@ -80,8 +81,15 @@
         <div>
           <span class="role">PRODUCTOS DE LEDPOD</span>
           <h2>Inventario de productos</h2>
-          <p class="muted">Los productos privados nunca aparecen en la tienda pública.</p>
+          <p class="muted">Elige qué productos aparecen en Inicio. Busca por código o nombre para encontrarlos rápido.</p>
         </div>
+      </div>
+      <div class="catalog-inventory-toolbar">
+        <div class="catalog-inventory-tabs" role="tablist" aria-label="Filtrar inventario por visibilidad">
+          <button id="catalogPublicTab" type="button" class="btn active" role="tab" aria-selected="true" aria-controls="catalogInventoryList">Públicos <span id="catalogPublicCount">0</span></button>
+          <button id="catalogPrivateTab" type="button" class="btn" role="tab" aria-selected="false" aria-controls="catalogInventoryList">Privados <span id="catalogPrivateCount">0</span></button>
+        </div>
+        <input id="catalogProductSearch" class="catalog-product-search" type="search" placeholder="Buscar por código LED o nombre…" aria-label="Buscar producto por código o nombre">
       </div>
       <div id="catalogInventoryList" class="product-shelf">
         <div class="empty">Cargando inventario…</div>

@@ -6,7 +6,7 @@ Local: `npx serve .` (los módulos ES requieren servidor, no abrir con doble cli
 
 El catálogo público se administra desde **Mi Cuenta → Inventario LEDPOD** con una cuenta cuyo rol sea `admin` en Firestore. En el primer ingreso, usa **Importar los 4 productos actuales con sus fotos** para conservar las imágenes existentes como productos del inventario.
 
-Cada producto puede guardarse como **Público** (aparece en la tienda) o **Privado** (solo lo ve el administrador). Los productos que agregan los comercios desde sus paneles no se mezclan con la tienda pública de LEDPOD. Las imágenes nuevas se comprimen en el navegador antes de guardarse en Firestore.
+El inventario Admin se separa en las pestañas **Públicos** y **Privados**. Cada producto se puede mover entre ambas; solo los públicos aparecen en la tienda LEDPOD. El inventario permite buscar por código de producto o nombre. Si no se indica un código, LEDPOD genera uno único automáticamente. Los productos que agregan los comercios desde sus paneles no se mezclan con la tienda pública de LEDPOD. Las imágenes nuevas se comprimen en el navegador antes de guardarse en Firestore.
 
 Al desplegar, publica también las reglas de `firestore.rules` en Firebase Console. El sitio necesita lectura pública de `catalogProducts` y `catalogSettings`; `catalogInventory` y las escrituras quedan limitados a administradores.
 
