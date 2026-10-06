@@ -10,7 +10,7 @@ import {
 import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
 import { auth, db } from '../../firebase.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
-import { CATEGORIES, PRODUCTS } from '../data.js';
+import { CATEGORIES, PRODUCTS, categoryIdFromValue } from '../data.js';
 import {
   addCatalogProduct,
   deleteCatalogProduct,
@@ -728,9 +728,10 @@ function renderAdminStoreProducts(products) {
   box.innerHTML = products.map((p) => `
     <article class="card">
       <div class="pic">
-        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '🍽️'}
+        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '📦'}
       </div>
       <h3>${esc(p.name)}</h3>
+      <div class="muted">${esc(CATEGORIES.find(category => category.id === categoryIdFromValue(p.category))?.name || 'Sin categoría')}</div>
       <div class="muted">${esc(p.description || '')}</div>
       <div class="price">RD$${esc(p.price ?? 0)}</div>
       <div style="display:flex;gap:6px;margin-top:8px">
@@ -764,6 +765,7 @@ function startEditingAdminProduct(productId) {
   adminEditingProductId = productId;
   adminPendingPhotoDataUrl = product.photo || null;
   document.getElementById('adminProdName').value = product.name || '';
+  document.getElementById('adminProdCategory').value = categoryIdFromValue(product.category);
   document.getElementById('adminProdPrice').value = product.price ?? '';
   document.getElementById('adminProdDescription').value = product.description || '';
 
@@ -797,6 +799,12 @@ function resetAdminProductForm() {
 }
 
 function setupAdminProductsPanel() {
+  const categorySelect = document.getElementById('adminProdCategory');
+  if (categorySelect) {
+    categorySelect.innerHTML = '<option value="" selected disabled>Selecciona una categoría</option>' + CATEGORIES.map(category =>
+      `<option value="${esc(category.id)}">${esc(category.name)}</option>`
+    ).join('');
+  }
   document.getElementById('btnCerrarProductosAdmin')?.addEventListener('click', closeAdminStoreProducts);
   document.getElementById('adminProdCancelEdit')?.addEventListener('click', resetAdminProductForm);
 
@@ -831,6 +839,7 @@ function setupAdminProductsPanel() {
     if (!adminProductsStoreId) return;
     const payload = {
       name: document.getElementById('adminProdName').value.trim(),
+      category: categorySelect.value,
       price: Number(document.getElementById('adminProdPrice').value) || 0,
       description: document.getElementById('adminProdDescription').value.trim(),
       photo: adminPendingPhotoDataUrl

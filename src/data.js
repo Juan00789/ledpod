@@ -6,6 +6,21 @@ export const CATEGORIES = [
   { id: "seguridad", icon: "📹", name: "Seguridad", sub: "Cámaras, alarmas, accesorios" },
   { id: "servicios-tecnicos", icon: "🛠️", name: "Servicios Técnicos", sub: "Instalación y asesoría especializada" }
 ];
+export function categoryIdFromValue(value) {
+  const normalized = String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  const category = CATEGORIES.find((item) =>
+    [item.id, item.name].some((label) =>
+      label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === normalized
+    )
+  );
+  if (category) return category.id;
+  if (/lampar|ilumin|bombill|led/.test(normalized)) return "iluminacion";
+  if (/decor|guirnal|ambiente/.test(normalized)) return "decoracion";
+  if (/electric|cable|enchufe/.test(normalized)) return "electricos";
+  if (/segur|camara|alarma/.test(normalized)) return "seguridad";
+  if (/tecnic|servicio|instal/.test(normalized)) return "servicios-tecnicos";
+  return "";
+}
 export const PRODUCTS = [
   { id: "tira-5050", img: "./src/assets/products/tira-led-5050.jpg", cat: "iluminacion", name: "Tira LED 5050 12V", sub: "Blanco cálido | 5 metros", price: 1250, icon: "💡" },
   { id: "panel-18w", img: "./src/assets/products/panel-led-18w.jpg", cat: "iluminacion", name: "Panel LED 18W", sub: "Luz blanca | Empotrable", price: 850, icon: "⚪" },

@@ -49,6 +49,8 @@ main{margin:64px 0 40px var(--side);padding:20px}
 .line{display:grid;grid-template-columns:1fr auto;gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px;font-size:14px}
 .qty{display:flex;gap:8px;align-items:center}.qty button{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:none}
 .total{display:flex;justify-content:space-between;font-size:18px}.total b{color:var(--y)}
+.cart-actions{display:grid;gap:8px}.cart-actions .btn{width:100%;text-align:center}.cart-actions .btn:disabled{cursor:not-allowed;opacity:.5}
+.cart-actions .cart-download{background:var(--panel);border:1px solid var(--line);color:var(--t)}
 @media(max-width:900px){
 .menu-btn{display:block}.brand-wordmark{font-size:21px}.side{transform:translateX(-105%);transition:transform .25s}.side.open{transform:none}
 main,.foot{margin-left:0}.split{grid-template-columns:1fr}.hero{padding:24px}.hero-logo{display:none}

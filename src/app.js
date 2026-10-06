@@ -1,5 +1,6 @@
-import { CATEGORIES, WHATSAPP, SLIDES } from "./data.js";
+import { CATEGORIES, WHATSAPP, SLIDES, categoryIdFromValue } from "./data.js";
 import { watchCatalogProducts, watchCatalogState } from "./catalog/public-catalog.js";
+import { getStoreProducts, watchOpenStores } from "./catalog/stores-service.js";
 const $ = (s) => document.querySelector(s);
 const money = (n) => "RD$ " + n.toLocaleString("es-DO");
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -9,8 +10,14 @@ const store = {
 };
 let products = [];
 let publishedProducts = [];
+let sucursalProducts = [];
 let managedCatalog = false;
 let cart = store.get(), cat = "todos", query = "";
+const PRIMARY_STORE_NAME = "sucursal puerto plata";
+
+function normalizeText(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
 
 function renderCats() {
   $("#categorias").innerHTML = CATEGORIES.map((c) =>
@@ -31,6 +38,7 @@ function renderCart() {
   const count = rows.reduce((a, [, n]) => a + n, 0), total = rows.reduce((a, [p, n]) => a + p.price * n, 0);
   $("#cartCount").textContent = count; $("#total").textContent = money(total);
   $("#order").disabled = !count; $("#order").style.opacity = count ? 1 : .5;
+  $("#downloadOrder").disabled = !count;
   $("#items").innerHTML = rows.length ? rows.map(([p, n]) => `
     <div class="line"><span>${esc(p.name)}</span><b>${money(p.price * n)}</b>
     <div class="qty"><button data-dec="${p.id}">−</button>${n}<button data-add="${p.id}">+</button></div></div>`).join("")
@@ -38,6 +46,64 @@ function renderCart() {
   store.set(cart);
 }
 function change(id, d) { cart[id] = (cart[id] || 0) + d; if (cart[id] <= 0) delete cart[id]; renderCart(); }
+
+function getCartRows() {
+  return Object.entries(cart)
+    .map(([id, quantity]) => [products.find((product) => product.id === id), quantity])
+    .filter(([product]) => product);
+}
+
+function getOrderDetails() {
+  const rows = getCartRows();
+  return {
+    rows,
+    total: rows.reduce((sum, [product, quantity]) => sum + product.price * quantity, 0),
+    createdAt: new Date()
+  };
+}
+
+function downloadOrderSheet() {
+  const { rows, total, createdAt } = getOrderDetails();
+  if (!rows.length) return;
+  const orderNumber = `LP-${createdAt.getFullYear()}${String(createdAt.getMonth() + 1).padStart(2, "0")}${String(createdAt.getDate()).padStart(2, "0")}-${String(createdAt.getHours()).padStart(2, "0")}${String(createdAt.getMinutes()).padStart(2, "0")}`;
+  const tableRows = rows.map(([product, quantity]) => {
+    const category = CATEGORIES.find((item) => item.id === categoryIdFromValue(product.cat))?.name || "Sin categoría";
+    return `<tr><td>${esc(product.name)}</td><td>${esc(category)}</td><td>${quantity}</td><td>${money(product.price)}</td><td>${money(product.price * quantity)}</td></tr>`;
+  }).join("");
+  const sheet = `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pedido ${orderNumber} | LEDPOD</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:32px;color:#17202a;font:14px/1.5 Arial,sans-serif}.sheet{max-width:850px;margin:auto}
+header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #f6bd16;padding-bottom:16px}
+h1{margin:0;font-size:28px}h2{margin:26px 0 10px;font-size:17px}.muted{color:#65717e}.meta{text-align:right}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px;margin:22px 0}.field{border-bottom:1px solid #9aa3ad;min-height:35px}
+table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:10px 8px;border:1px solid #ccd2d8;text-align:left}th{background:#f3f5f7}
+.total{margin:18px 0 0 auto;width:max-content;font-size:20px;font-weight:bold}.notes{margin-top:26px}.notes .field{min-height:50px}
+.print{margin:24px 0;padding:10px 18px;border:0;border-radius:8px;background:#f6bd16;font-weight:bold;cursor:pointer}
+@media print{body{padding:0}.sheet{max-width:none}.print{display:none}header,table,.fields,.notes{break-inside:avoid}}
+@media(max-width:600px){body{padding:16px}.fields{grid-template-columns:1fr}header{flex-direction:column}.meta{text-align:left}table{font-size:12px}th,td{padding:6px 4px}}
+</style></head><body><main class="sheet">
+<header><div><h1>LEDPOD</h1><div class="muted">Hoja de pedido · Puerto Plata, R.D.</div><div>+1 849 886 5556</div></div>
+<div class="meta"><strong>${orderNumber}</strong><div>${createdAt.toLocaleString("es-DO")}</div></div></header>
+<h2>Datos de entrega</h2><div class="fields">
+<div class="field">Cliente:</div><div class="field">Teléfono:</div>
+<div class="field">Dirección de entrega:</div><div class="field">Repartidor:</div>
+</div>
+<h2>Productos solicitados</h2><table><thead><tr><th>Producto</th><th>Categoría</th><th>Cant.</th><th>Precio unitario</th><th>Subtotal</th></tr></thead><tbody>${tableRows}</tbody></table>
+<div class="total">Total: ${money(total)}</div><div class="notes"><h2>Notas / instrucciones</h2><div class="field"></div><div class="field"></div></div>
+<button class="print" onclick="window.print()">Imprimir / Guardar como PDF</button>
+</main></body></html>`;
+  const blob = new Blob([sheet], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `pedido-ledpod-${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}-${String(createdAt.getDate()).padStart(2, "0")}.html`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-add],[data-dec],[data-cat]"); if (!t) return;
@@ -66,12 +132,12 @@ function updateSideLink() {
 window.addEventListener("scroll", updateSideLink, { passive: true });
 window.addEventListener("hashchange", updateSideLink);
 $("#order").onclick = () => {
-  const rows = Object.entries(cart).map(([id, n]) => [products.find((p) => p.id === id), n]).filter(([p]) => p);
+  const { rows, total } = getOrderDetails();
   if (!rows.length) return;
-  const total = rows.reduce((a, [p, n]) => a + p.price * n, 0);
-  const msg = ["Hola LEDPOD, quiero hacer este pedido:", ...rows.map(([p, n]) => `• ${n} x ${p.name} — ${money(p.price * n)}`), `Total: ${money(total)}`].join("\n");
+  const msg = ["Hola LEDPOD, quiero hacer este pedido:", ...rows.map(([p, n]) => `• ${n} x ${p.name} — ${money(p.price * n)}`), `Total: ${money(total)}`, "Por favor, confirmen los datos de entrega."].join("\n");
   window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
 };
+$("#downloadOrder").onclick = downloadOrderSheet;
 
 let slide = 0;
 function showSlide(i) {
@@ -82,13 +148,14 @@ $("#dots").onclick = (e) => { if (e.target.dataset.s) showSlide(+e.target.datase
 setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
 function usePublishedCatalog() {
-  products = publishedProducts.map((p) => ({
+  const adminProducts = publishedProducts.map((p) => ({
     id: p.id, img: p.photo, cat: p.category, name: p.name,
     sub: p.description, price: p.price, icon: "🛍️"
   }));
+  products = [...adminProducts, ...sucursalProducts];
   renderGrid();
   renderCart();
-  if (!publishedProducts.length) {
+  if (!products.length) {
     $("#catalogStatus").textContent = "Todavía no hay productos públicos. En el panel Admin, cambia la visibilidad del producto a Público para mostrarlo aquí.";
     $("#catalogStatus").hidden = false;
   } else {
@@ -97,11 +164,7 @@ function usePublishedCatalog() {
 }
 
 function useDefaultCatalog() {
-  products = [];
-  renderGrid();
-  renderCart();
-  $("#catalogStatus").textContent = "Todavía no hay productos publicados. Agrégalos desde el inventario Admin y márcalos como públicos.";
-  $("#catalogStatus").hidden = false;
+  usePublishedCatalog();
 }
 
 watchCatalogProducts((items) => {
@@ -131,6 +194,38 @@ watchCatalogState((initialized) => {
   console.error("No se pudo comprobar el estado del catálogo LEDPOD:", error);
   const status = $("#catalogStatus");
   status.textContent = "No se pudo comprobar el estado del catálogo en Firebase.";
+  status.hidden = false;
+});
+
+watchOpenStores(async (stores) => {
+  const primaryStore = stores.find(store => normalizeText(store.name) === PRIMARY_STORE_NAME);
+  if (!primaryStore) {
+    sucursalProducts = [];
+    usePublishedCatalog();
+    return;
+  }
+  try {
+    const storeProducts = await getStoreProducts(primaryStore.id);
+    sucursalProducts = storeProducts.map(product => ({
+      id: `sucursal-${primaryStore.id}-${product.id}`,
+      img: product.photo,
+      cat: categoryIdFromValue(product.category),
+      name: product.name,
+      sub: product.description,
+      price: Number(product.price) || 0,
+      icon: "🛍️"
+    }));
+    usePublishedCatalog();
+  } catch (error) {
+    console.error("No se pudieron cargar los productos de Sucursal Puerto Plata:", error);
+    const status = $("#catalogStatus");
+    status.textContent = "No se pudieron cargar los productos de Sucursal Puerto Plata.";
+    status.hidden = false;
+  }
+}, (error) => {
+  console.error("No se pudo consultar Sucursal Puerto Plata:", error);
+  const status = $("#catalogStatus");
+  status.textContent = "No se pudo comprobar la disponibilidad de Sucursal Puerto Plata.";
   status.hidden = false;
 });
 
