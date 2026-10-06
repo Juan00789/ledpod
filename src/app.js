@@ -83,6 +83,8 @@ $("#dots").onclick = (e) => { if (e.target.dataset.s) showSlide(+e.target.datase
 setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
 function usePublishedCatalog() {
+  // Los productos públicos de Firestore son la fuente del catálogo cuando existen.
+  // Si todavía no hay publicaciones, conservamos el catálogo visual incluido en el proyecto.
   products = publishedProducts.map((p) => ({
     id: p.id, img: p.photo, cat: p.category, name: p.name,
     sub: p.description, price: p.price, icon: "🛍️"
@@ -90,7 +92,9 @@ function usePublishedCatalog() {
   renderGrid();
   renderCart();
   if (!publishedProducts.length) {
-    $("#catalogStatus").textContent = "Pronto publicaremos productos en el catálogo.";
+    products = DEFAULT_PRODUCTS;
+    renderGrid();
+    $("#catalogStatus").textContent = "Todavía no hay productos publicados. Mostrando el catálogo base.";
     $("#catalogStatus").hidden = false;
   } else {
     $("#catalogStatus").hidden = true;
