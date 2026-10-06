@@ -19,11 +19,13 @@ import {
   onSnapshot,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 import { db } from '../../firebase.js';
+import { getProductPhotos, productPhotoFields } from '../shared/product-photos.js';
 
 // ---- Horario semanal -------------------------------------------------
 //
@@ -202,10 +204,11 @@ export function watchOwnProducts(storeId, callback, onError = console.error) {
 // SÍ es un número, se descuenta automáticamente al confirmar cada
 // pedido (ver updateOrderStatusByStore en orders-service.js) y el
 // producto se oculta como "Agotado" en cuanto llega a 0.
-export async function addProduct(storeId, { name, description, price, category, photo, available, stock }) {
+export async function addProduct(storeId, { name, description, price, category, photo, photos, available, stock }) {
+  const productPhotos = getProductPhotos({ photo, photos });
   return addDoc(collection(db, 'stores', storeId, 'products'), {
     name, description: description || '', price: Number(price) || 0,
-    category: category || '', photo: photo || null,
+    category: category || '', ...productPhotoFields(productPhotos),
     available: available !== false,
     stock: (stock === '' || stock === null || stock === undefined) ? null : Math.max(0, Math.floor(Number(stock)) || 0),
     createdAt: serverTimestamp(), updatedAt: serverTimestamp()
@@ -213,9 +216,12 @@ export async function addProduct(storeId, { name, description, price, category, 
 }
 
 export async function updateProduct(storeId, productId, fields) {
-  await updateDoc(doc(db, 'stores', storeId, 'products', productId), {
-    ...fields, updatedAt: serverTimestamp()
-  });
+  const payload = { ...fields, updatedAt: serverTimestamp() };
+  if ('photo' in fields || 'photos' in fields) {
+    Object.assign(payload, productPhotoFields(getProductPhotos(fields)));
+    payload.photo = payload.photo || deleteField();
+  }
+  await updateDoc(doc(db, 'stores', storeId, 'products', productId), payload);
 }
 
 export async function deleteProduct(storeId, productId) {

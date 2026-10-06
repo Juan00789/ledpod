@@ -36,7 +36,8 @@ main{margin:64px 0 40px var(--side);padding:20px}
 .link{background:none;border:0;color:var(--y);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-.ph{height:120px;display:grid;place-items:center;font-size:44px;background:#0f1218}.ph img{width:100%;height:100%;object-fit:cover}
+.ph{height:120px;position:relative;display:grid;place-items:center;font-size:44px;background:#0f1218}.ph img{width:100%;height:100%;object-fit:cover}
+.ph .product-photo-count{position:absolute;right:7px;bottom:7px;padding:3px 7px;border:1px solid #ffffff30;border-radius:999px;background:#0d0f14c9;color:#fff;font-size:11px}
 .card div.b{padding:10px 12px;flex:1}.card h4{font-size:14px}.card small{color:var(--m);font-size:12px}
 .card .row{display:flex;justify-content:space-between;align-items:center;padding:0 12px 12px}
 .card .row b{color:var(--y)}.add{background:var(--y);color:#111;border:0;border-radius:8px;width:34px;height:32px}

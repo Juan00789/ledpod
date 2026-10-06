@@ -66,14 +66,11 @@
           </div>
           <div class="product-editor-media">
             <div class="field">
-              <label for="prodPhotoInput">Foto del producto</label>
-              <div class="product-photo-preview">
-                <img id="prodPhotoPreview" style="display:none" alt="Vista previa del producto">
-                <span id="prodPhotoPlaceholder">📦<small>La foto aparecerá aquí</small></span>
-              </div>
-              <input id="prodPhotoInput" type="file" accept="image/*" capture="environment">
-              <small class="muted">Sube una foto clara del producto o tómala con la cámara.</small>
-              <button type="button" id="btnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+              <label for="prodPhotoInput">Fotos del producto</label>
+              <div id="prodPhotoPreview" class="product-photo-gallery" aria-live="polite"></div>
+              <input id="prodPhotoInput" type="file" accept="image/*" multiple>
+              <small class="muted">Puedes elegir hasta 5 fotos. Se optimizan automáticamente; pulsa × para quitar una foto.</small>
+              <button type="button" id="btnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar todas las fotos</button>
             </div>
           </div>
         </div>

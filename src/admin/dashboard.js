@@ -10,6 +10,12 @@ import {
 import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
 import { auth, db } from '../../firebase.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
+import {
+  addSelectedProductPhotos,
+  getProductPhotos,
+  productPhotoFields,
+  renderProductPhotoGallery
+} from '../shared/product-photos.js';
 import { CATEGORIES, PRODUCTS, categoryIdFromValue } from '../data.js';
 import {
   addCatalogProduct,
@@ -689,7 +695,7 @@ let adminProductsStoreId = null;
 let unsubAdminProducts = null;
 let adminEditingProductId = null;
 let latestAdminProducts = [];
-let adminPendingPhotoDataUrl = null; // foto ya comprimida, lista para guardar
+let adminPendingProductPhotos = [];
 
 function openAdminStoreProducts(storeId, storeName) {
   adminProductsStoreId = storeId;
@@ -725,10 +731,13 @@ function renderAdminStoreProducts(products) {
     box.innerHTML = '<div class="empty">Este comercio todavía no tiene productos. Agrega el primero arriba.</div>';
     return;
   }
-  box.innerHTML = products.map((p) => `
+  box.innerHTML = products.map((p) => {
+    const photos = getProductPhotos(p);
+    return `
     <article class="card">
       <div class="pic">
-        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '📦'}
+        ${photos.length ? `<img src="${esc(photos[0])}" alt="${esc(p.name)}">` : '📦'}
+        ${photos.length > 1 ? `<span class="product-photo-count">1 / ${photos.length}</span>` : ''}
       </div>
       <h3>${esc(p.name)}</h3>
       <div class="muted">${esc(CATEGORIES.find(category => category.id === categoryIdFromValue(p.category))?.name || 'Sin categoría')}</div>
@@ -739,7 +748,8 @@ function renderAdminStoreProducts(products) {
         <button type="button" class="btn adminDeleteProduct" data-id="${p.id}" style="flex:1">Eliminar</button>
       </div>
     </article>
-  `).join('');
+  `;
+  }).join('');
 
   box.querySelectorAll('.adminDeleteProduct').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -763,35 +773,33 @@ function startEditingAdminProduct(productId) {
   const product = latestAdminProducts.find((p) => p.id === productId);
   if (!product) return;
   adminEditingProductId = productId;
-  adminPendingPhotoDataUrl = product.photo || null;
+  adminPendingProductPhotos = getProductPhotos(product);
   document.getElementById('adminProdName').value = product.name || '';
   document.getElementById('adminProdCategory').value = categoryIdFromValue(product.category);
   document.getElementById('adminProdPrice').value = product.price ?? '';
   document.getElementById('adminProdDescription').value = product.description || '';
 
-  const preview = document.getElementById('adminProdPhotoPreview');
-  const btnQuitarFoto = document.getElementById('adminBtnQuitarFoto');
-  if (product.photo) {
-    preview.src = product.photo;
-    preview.style.display = 'block';
-    btnQuitarFoto.style.display = 'inline-block';
-  } else {
-    preview.style.display = 'none';
-    btnQuitarFoto.style.display = 'none';
-  }
+  renderAdminProductPhotoPreview();
 
   document.getElementById('adminProdSubmit').textContent = 'Guardar cambios';
   document.getElementById('adminProdCancelEdit').style.display = 'inline-block';
 }
 
+function renderAdminProductPhotoPreview() {
+  const preview = document.getElementById('adminProdPhotoPreview');
+  renderProductPhotoGallery(preview, adminPendingProductPhotos, index => {
+    adminPendingProductPhotos.splice(index, 1);
+    renderAdminProductPhotoPreview();
+  });
+  const clearButton = document.getElementById('adminBtnQuitarFoto');
+  if (clearButton) clearButton.style.display = adminPendingProductPhotos.length ? 'inline-block' : 'none';
+}
+
 function resetAdminProductForm() {
   adminEditingProductId = null;
-  adminPendingPhotoDataUrl = null;
+  adminPendingProductPhotos = [];
   document.getElementById('adminProductForm')?.reset();
-  const preview = document.getElementById('adminProdPhotoPreview');
-  if (preview) preview.style.display = 'none';
-  const btnQuitarFoto = document.getElementById('adminBtnQuitarFoto');
-  if (btnQuitarFoto) btnQuitarFoto.style.display = 'none';
+  renderAdminProductPhotoPreview();
   const submitBtn = document.getElementById('adminProdSubmit');
   const cancelBtn = document.getElementById('adminProdCancelEdit');
   if (submitBtn) submitBtn.textContent = 'Agregar producto';
@@ -799,6 +807,7 @@ function resetAdminProductForm() {
 }
 
 function setupAdminProductsPanel() {
+  renderAdminProductPhotoPreview();
   const categorySelect = document.getElementById('adminProdCategory');
   if (categorySelect) {
     categorySelect.innerHTML = '<option value="" selected disabled>Selecciona una categoría</option>' + CATEGORIES.map(category =>
@@ -809,29 +818,23 @@ function setupAdminProductsPanel() {
   document.getElementById('adminProdCancelEdit')?.addEventListener('click', resetAdminProductForm);
 
   document.getElementById('adminProdPhotoInput')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const preview = document.getElementById('adminProdPhotoPreview');
+    const input = e.target;
+    if (!input.files?.length) return;
     try {
-      preview.style.display = 'none';
-      adminPendingPhotoDataUrl = await compressImageToDataUrl(file);
-      preview.src = adminPendingPhotoDataUrl;
-      preview.style.display = 'block';
-      document.getElementById('adminBtnQuitarFoto').style.display = 'inline-block';
+      adminPendingProductPhotos = await addSelectedProductPhotos(input.files, adminPendingProductPhotos);
+      renderAdminProductPhotoPreview();
     } catch (err) {
       console.error(err);
       showToast(err.message || 'No se pudo procesar la foto.', true);
-      e.target.value = '';
+    } finally {
+      input.value = '';
     }
   });
 
   document.getElementById('adminBtnQuitarFoto')?.addEventListener('click', () => {
-    adminPendingPhotoDataUrl = null;
-    const input = document.getElementById('adminProdPhotoInput');
-    const preview = document.getElementById('adminProdPhotoPreview');
-    if (input) input.value = '';
-    preview.style.display = 'none';
-    document.getElementById('adminBtnQuitarFoto').style.display = 'none';
+    adminPendingProductPhotos = [];
+    renderAdminProductPhotoPreview();
+    document.getElementById('adminProdPhotoInput').value = '';
   });
 
   document.getElementById('adminProductForm')?.addEventListener('submit', async (event) => {
@@ -842,7 +845,7 @@ function setupAdminProductsPanel() {
       category: categorySelect.value,
       price: Number(document.getElementById('adminProdPrice').value) || 0,
       description: document.getElementById('adminProdDescription').value.trim(),
-      photo: adminPendingPhotoDataUrl
+      ...productPhotoFields(adminPendingProductPhotos)
     };
     try {
       if (adminEditingProductId) {
@@ -862,7 +865,7 @@ function setupAdminProductsPanel() {
 
 let catalogProducts = [];
 let editingCatalogProductId = null;
-let pendingCatalogPhoto = null;
+let pendingCatalogPhotos = [];
 let activeInventoryVisibility = 'public';
 
 function renderCatalogInventory(products) {
@@ -902,12 +905,13 @@ function renderCatalogInventory(products) {
 
   list.innerHTML = filteredProducts.map(product => {
     const isPrivate = product.visibility === 'private';
+    const photos = getProductPhotos(product);
     const categoryName = CATEGORIES.find(category => category.id === product.category)?.name
       || product.category
       || 'Sin categoría';
     return `
     <article class="card product-tile">
-      <div class="pic product-tile-photo${product.photo ? '' : ' product-tile-no-photo'}">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '📦'}</div>
+      <div class="pic product-tile-photo${photos.length ? '' : ' product-tile-no-photo'}">${photos.length ? `<img src="${esc(photos[0])}" alt="${esc(product.name)}">` : '📦'}${photos.length > 1 ? `<span class="product-photo-count">1 / ${photos.length}</span>` : ''}</div>
       <div class="product-tile-body">
         <h3>${esc(product.name)}</h3>
         <code class="product-code">${esc(product.code || catalogProductCode(product.id))}</code>
@@ -926,21 +930,23 @@ function renderCatalogInventory(products) {
   }).join('');
 }
 
+function renderCatalogProductPhotoPreview() {
+  const preview = document.getElementById('catalogProductPhotoPreview');
+  renderProductPhotoGallery(preview, pendingCatalogPhotos, index => {
+    pendingCatalogPhotos.splice(index, 1);
+    renderCatalogProductPhotoPreview();
+  });
+  const clearButton = document.getElementById('catalogProductRemovePhoto');
+  if (clearButton) clearButton.style.display = pendingCatalogPhotos.length ? 'inline-block' : 'none';
+}
+
 function resetCatalogProductForm() {
   editingCatalogProductId = null;
-  pendingCatalogPhoto = null;
+  pendingCatalogPhotos = [];
   document.getElementById('catalogProductForm')?.reset();
-  const preview = document.getElementById('catalogProductPhotoPreview');
-  const photoPlaceholder = document.getElementById('catalogProductPhotoPlaceholder');
-  if (preview) {
-    preview.removeAttribute('src');
-    preview.style.display = 'none';
-  }
-  if (photoPlaceholder) photoPlaceholder.style.display = '';
+  renderCatalogProductPhotoPreview();
   const fileInput = document.getElementById('catalogProductPhoto');
   if (fileInput) fileInput.value = '';
-  const removeButton = document.getElementById('catalogProductRemovePhoto');
-  if (removeButton) removeButton.style.display = 'none';
   const submitButton = document.getElementById('catalogProductSubmit');
   if (submitButton) submitButton.textContent = 'Agregar al inventario';
   const cancelButton = document.getElementById('catalogProductCancel');
@@ -957,9 +963,9 @@ function setupCatalogInventoryPanel() {
 
   const form = document.getElementById('catalogProductForm');
   const list = document.getElementById('catalogInventoryList');
-  const preview = document.getElementById('catalogProductPhotoPreview');
   const photoInput = document.getElementById('catalogProductPhoto');
   const removePhoto = document.getElementById('catalogProductRemovePhoto');
+  renderCatalogProductPhotoPreview();
   document.getElementById('catalogPublicTab')?.addEventListener('click', () => {
     activeInventoryVisibility = 'public';
     renderCatalogInventory(catalogProducts);
@@ -995,28 +1001,22 @@ function setupCatalogInventoryPanel() {
   });
 
   photoInput?.addEventListener('change', async () => {
-    const file = photoInput.files?.[0];
-    if (!file) return;
+    if (!photoInput.files?.length) return;
     try {
-      pendingCatalogPhoto = await compressImageToDataUrl(file);
-      preview.src = pendingCatalogPhoto;
-      preview.style.display = 'block';
-      photoPlaceholder.style.display = 'none';
-      removePhoto.style.display = 'inline-block';
+      pendingCatalogPhotos = await addSelectedProductPhotos(photoInput.files, pendingCatalogPhotos);
+      renderCatalogProductPhotoPreview();
     } catch (error) {
       console.error(error);
       showToast(error.message || 'No se pudo procesar la imagen.', true);
+    } finally {
       photoInput.value = '';
     }
   });
 
   removePhoto?.addEventListener('click', () => {
-    pendingCatalogPhoto = null;
+    pendingCatalogPhotos = [];
     photoInput.value = '';
-    preview.removeAttribute('src');
-    preview.style.display = 'none';
-    photoPlaceholder.style.display = '';
-    removePhoto.style.display = 'none';
+    renderCatalogProductPhotoPreview();
   });
 
   document.getElementById('catalogProductCancel')?.addEventListener('click', resetCatalogProductForm);
@@ -1047,7 +1047,7 @@ function setupCatalogInventoryPanel() {
       const product = catalogProducts.find(item => item.id === editButton.dataset.id);
       if (!product) return;
       editingCatalogProductId = product.id;
-      pendingCatalogPhoto = product.photo || null;
+      pendingCatalogPhotos = getProductPhotos(product);
       document.getElementById('catalogProductName').value = product.name || '';
       document.getElementById('catalogProductCode').value = product.code || catalogProductCode(product.id);
       const savedCategory = CATEGORIES.find(category =>
@@ -1057,17 +1057,7 @@ function setupCatalogInventoryPanel() {
       document.getElementById('catalogProductPrice').value = product.price ?? '';
       document.getElementById('catalogProductDescription').value = product.description || '';
       document.getElementById('catalogProductVisibility').value = product.visibility || 'public';
-      if (product.photo) {
-        preview.src = product.photo;
-        preview.style.display = 'block';
-        photoPlaceholder.style.display = 'none';
-        removePhoto.style.display = 'inline-block';
-      } else {
-        preview.removeAttribute('src');
-        preview.style.display = 'none';
-        photoPlaceholder.style.display = '';
-        removePhoto.style.display = 'none';
-      }
+      renderCatalogProductPhotoPreview();
       document.getElementById('catalogProductSubmit').textContent = 'Guardar cambios';
       document.getElementById('catalogProductCancel').style.display = 'inline-block';
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1094,7 +1084,7 @@ function setupCatalogInventoryPanel() {
       price: document.getElementById('catalogProductPrice').value,
       description: document.getElementById('catalogProductDescription').value,
       visibility: document.getElementById('catalogProductVisibility').value,
-      photo: pendingCatalogPhoto
+      ...productPhotoFields(pendingCatalogPhotos)
     };
     try {
       if (editingCatalogProductId) {

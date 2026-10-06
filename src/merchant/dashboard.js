@@ -1,6 +1,11 @@
 // src/merchant/dashboard.js
 import { esc, money, formatDate, showToast } from '../shared/utils.js';
-import { compressImageToDataUrl } from '../shared/img-utils.js';
+import {
+  addSelectedProductPhotos,
+  getProductPhotos,
+  productPhotoFields,
+  renderProductPhotoGallery
+} from '../shared/product-photos.js';
 import { CATEGORIES, categoryIdFromValue } from '../data.js';
 import {
   watchOwnStore,
@@ -29,7 +34,7 @@ let currentStore = null;
 let unsubProducts = null;
 let unsubOrders = null;
 let editingProductId = null;
-let pendingPhotoDataUrl = null; // foto ya comprimida, lista para guardar
+let pendingProductPhotos = [];
 
 function renderStoreState(store) {
   const noStoreBox = document.getElementById('noStoreBox');
@@ -154,6 +159,7 @@ function renderProducts(products) {
     return;
   }
   box.innerHTML = products.map((p) => {
+    const photos = getProductPhotos(p);
     const tieneStock = typeof p.stock === 'number';
     const agotado = tieneStock && p.stock <= 0;
     const stockBadge = !tieneStock
@@ -163,8 +169,9 @@ function renderProducts(products) {
         : `<span class="product-stock${p.stock <= 3 ? ' product-stock-low' : ''}">Stock: ${p.stock}</span>`;
     return `
     <article class="card product-tile">
-      <div class="pic product-tile-photo${p.photo ? '' : ' product-tile-no-photo'}">
-        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '📦'}
+      <div class="pic product-tile-photo${photos.length ? '' : ' product-tile-no-photo'}">
+        ${photos.length ? `<img src="${esc(photos[0])}" alt="${esc(p.name)}">` : '📦'}
+        ${photos.length > 1 ? `<span class="product-photo-count">1 / ${photos.length}</span>` : ''}
       </div>
       <div class="product-tile-body">
         <h3>${esc(p.name)}</h3>
@@ -203,7 +210,7 @@ function startEditingProduct(productId) {
   const product = latestProducts.find((p) => p.id === productId);
   if (!product) return;
   editingProductId = productId;
-  pendingPhotoDataUrl = product.photo || null;
+  pendingProductPhotos = getProductPhotos(product);
 
   document.getElementById('prodNameInput').value = product.name || '';
   document.getElementById('prodPriceInput').value = product.price ?? '';
@@ -211,34 +218,28 @@ function startEditingProduct(productId) {
   document.getElementById('prodDescriptionInput').value = product.description || '';
   document.getElementById('prodStockInput').value = typeof product.stock === 'number' ? product.stock : '';
 
-  const preview = document.getElementById('prodPhotoPreview');
-  const btnQuitarFoto = document.getElementById('btnQuitarFoto');
-  const placeholder = document.getElementById('prodPhotoPlaceholder');
-  if (product.photo) {
-    preview.src = product.photo;
-    preview.style.display = 'block';
-    placeholder.style.display = 'none';
-    btnQuitarFoto.style.display = 'inline-block';
-  } else {
-    preview.removeAttribute('src');
-    preview.style.display = 'none';
-    placeholder.style.display = '';
-    btnQuitarFoto.style.display = 'none';
-  }
+  renderMerchantProductPhotoPreview();
 
   document.getElementById('btnProductSubmit').textContent = 'Guardar cambios';
   document.getElementById('btnCancelarEdicion').style.display = 'inline-block';
   document.getElementById('prodNameInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function renderMerchantProductPhotoPreview() {
+  const preview = document.getElementById('prodPhotoPreview');
+  renderProductPhotoGallery(preview, pendingProductPhotos, index => {
+    pendingProductPhotos.splice(index, 1);
+    renderMerchantProductPhotoPreview();
+  });
+  const clearButton = document.getElementById('btnQuitarFoto');
+  if (clearButton) clearButton.style.display = pendingProductPhotos.length ? 'inline-block' : 'none';
+}
+
 function resetProductForm() {
   editingProductId = null;
-  pendingPhotoDataUrl = null;
+  pendingProductPhotos = [];
   document.getElementById('productForm')?.reset();
-  document.getElementById('prodPhotoPreview').removeAttribute('src');
-  document.getElementById('prodPhotoPreview').style.display = 'none';
-  document.getElementById('prodPhotoPlaceholder').style.display = '';
-  document.getElementById('btnQuitarFoto').style.display = 'none';
+  renderMerchantProductPhotoPreview();
   document.getElementById('btnProductSubmit').textContent = 'Agregar producto';
   document.getElementById('btnCancelarEdicion').style.display = 'none';
 }
@@ -256,6 +257,7 @@ function startStoreScopedListeners(storeId) {
 export function initMerchantDashboard(session) {
   const uid = session.user.uid;
   const categorySelect = document.getElementById('prodCategoryInput');
+  renderMerchantProductPhotoPreview();
   if (categorySelect) {
     categorySelect.innerHTML = '<option value="" selected disabled>Selecciona una categoría</option>' + CATEGORIES.map(category =>
       `<option value="${esc(category.id)}">${esc(category.name)}</option>`
@@ -308,32 +310,24 @@ export function initMerchantDashboard(session) {
   });
 
   document.getElementById('prodPhotoInput')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const preview = document.getElementById('prodPhotoPreview');
+    const input = e.target;
+    if (!input.files?.length) return;
     try {
-      preview.style.display = 'none';
-      pendingPhotoDataUrl = await compressImageToDataUrl(file);
-      preview.src = pendingPhotoDataUrl;
-      preview.style.display = 'block';
-      document.getElementById('prodPhotoPlaceholder').style.display = 'none';
-      document.getElementById('btnQuitarFoto').style.display = 'inline-block';
+      pendingProductPhotos = await addSelectedProductPhotos(input.files, pendingProductPhotos);
+      renderMerchantProductPhotoPreview();
     } catch (err) {
       console.error(err);
       showToast('merchantToast', err.message || 'No se pudo procesar la foto.', true);
-      e.target.value = '';
+    } finally {
+      input.value = '';
     }
   });
 
   document.getElementById('btnQuitarFoto')?.addEventListener('click', () => {
-    pendingPhotoDataUrl = null;
+    pendingProductPhotos = [];
     const input = document.getElementById('prodPhotoInput');
-    const preview = document.getElementById('prodPhotoPreview');
     if (input) input.value = '';
-    preview.removeAttribute('src');
-    preview.style.display = 'none';
-    document.getElementById('prodPhotoPlaceholder').style.display = '';
-    document.getElementById('btnQuitarFoto').style.display = 'none';
+    renderMerchantProductPhotoPreview();
   });
 
   document.getElementById('btnCancelarEdicion')?.addEventListener('click', () => resetProductForm());
@@ -349,7 +343,7 @@ export function initMerchantDashboard(session) {
       price: document.getElementById('prodPriceInput').value,
       category: categorySelect.value,
       description: document.getElementById('prodDescriptionInput').value.trim(),
-      photo: pendingPhotoDataUrl,
+      ...productPhotoFields(pendingProductPhotos),
       stock: document.getElementById('prodStockInput').value.trim()
     };
     try {
@@ -357,7 +351,6 @@ export function initMerchantDashboard(session) {
         await updateProduct(currentStore.id, editingProductId, {
           ...payload,
           price: Number(payload.price) || 0,
-          photo: pendingPhotoDataUrl,
           stock: payload.stock === '' ? null : Math.max(0, Math.floor(Number(payload.stock)) || 0)
         });
         showToast('merchantToast', 'Producto actualizado.');

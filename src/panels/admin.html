@@ -60,14 +60,11 @@
           </div>
           <div class="product-editor-media">
             <div class="field">
-              <label for="catalogProductPhoto">Foto del producto</label>
-              <div class="product-photo-preview">
-                <img id="catalogProductPhotoPreview" style="display:none" alt="Vista previa del producto">
-                <span id="catalogProductPhotoPlaceholder">📦<small>La foto aparecerá aquí</small></span>
-              </div>
-              <input id="catalogProductPhoto" type="file" accept="image/*" capture="environment">
-              <small class="muted">Sube una foto clara del producto. Se optimiza antes de guardarla.</small>
-              <button type="button" id="catalogProductRemovePhoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+              <label for="catalogProductPhoto">Fotos del producto</label>
+              <div id="catalogProductPhotoPreview" class="product-photo-gallery" aria-live="polite"></div>
+              <input id="catalogProductPhoto" type="file" accept="image/*" multiple>
+              <small class="muted">Puedes elegir hasta 5 fotos. Se optimizan automáticamente; pulsa × para quitar una foto.</small>
+              <button type="button" id="catalogProductRemovePhoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar todas las fotos</button>
             </div>
           </div>
         </div>
@@ -245,13 +242,13 @@
         <div class="field"><label>Precio (RD$) *</label><input id="adminProdPrice" type="number" min="0" step="0.01" required></div>
         <div class="field"><label>Descripción</label><input id="adminProdDescription"></div>
         <div class="field">
-          <label>Foto del producto</label>
+          <label for="adminProdPhotoInput">Fotos del producto</label>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <img id="adminProdPhotoPreview" class="photo-preview" style="display:none">
-            <input id="adminProdPhotoInput" type="file" accept="image/*" capture="environment">
+            <div id="adminProdPhotoPreview" class="product-photo-gallery" aria-live="polite"></div>
+            <input id="adminProdPhotoInput" type="file" accept="image/*" multiple>
           </div>
-          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
-          <button type="button" id="adminBtnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+          <small class="muted">Puedes elegir hasta 5 fotos; se optimizan automáticamente.</small>
+          <button type="button" id="adminBtnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar todas las fotos</button>
         </div>
         <button type="submit" id="adminProdSubmit" class="btn primary">Agregar producto</button>
         <button type="button" id="adminProdCancelEdit" class="btn" style="display:none">Cancelar edición</button>

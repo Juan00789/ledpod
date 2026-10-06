@@ -11,6 +11,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 import { db } from '../../firebase.js';
 import { CATEGORIES } from '../data.js';
+import { getProductPhotos, productPhotoFields } from '../shared/product-photos.js';
 
 const inventoryRef = collection(db, 'catalogInventory');
 const publishedRef = collection(db, 'catalogProducts');
@@ -72,8 +73,14 @@ export async function syncPublishedCatalog() {
       }, { merge: true }));
     }
     const needsPublish = !published || [
-      'code', 'name', 'category', 'description', 'price', 'photo', 'visibility'
-    ].some(field => (published[field] ?? null) !== (publicData[field] ?? null));
+      'code', 'name', 'category', 'description', 'price', 'photo', 'visibility', 'photos'
+    ].some(field => {
+      const publishedValue = published[field] ?? (field === 'photos' ? [] : null);
+      const inventoryValue = publicData[field] ?? (field === 'photos' ? [] : null);
+      return field === 'photos'
+        ? JSON.stringify(publishedValue) !== JSON.stringify(inventoryValue)
+        : publishedValue !== inventoryValue;
+    });
     if (needsPublish) {
       writes.push(batch => batch.set(doc(publishedRef, product.id), publicData));
     }
@@ -94,7 +101,7 @@ export async function syncPublishedCatalog() {
   return writes.length;
 }
 
-function productData({ code, name, category, description, price, photo, visibility }, productId) {
+function productData({ code, name, category, description, price, photo, photos, visibility }, productId) {
   const cleanName = String(name || '').trim();
   const categoryValue = String(category || '').trim().toLowerCase();
   const matchedCategory = CATEGORIES.find(item =>
@@ -106,13 +113,14 @@ function productData({ code, name, category, description, price, photo, visibili
   if (!matchedCategory) throw new Error('Selecciona una categoría válida del catálogo LEDPOD.');
   if (!Number.isFinite(numericPrice) || numericPrice < 0) throw new Error('Escribe un precio válido mayor o igual a cero.');
 
+  const productPhotos = getProductPhotos({ photo, photos });
   return {
     code: String(code || '').trim().toUpperCase() || catalogProductCode(productId),
     name: cleanName,
     category: matchedCategory.id,
     description: String(description || '').trim(),
     price: numericPrice,
-    photo: photo || null,
+    ...productPhotoFields(productPhotos),
     visibility: visibility === 'public' ? 'public' : 'private',
     updatedAt: serverTimestamp()
   };

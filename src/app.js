@@ -1,6 +1,7 @@
 import { CATEGORIES, WHATSAPP, SLIDES, categoryIdFromValue } from "./data.js";
 import { watchCatalogProducts, watchCatalogState } from "./catalog/public-catalog.js";
 import { getStoreProducts, watchOpenStores } from "./catalog/stores-service.js";
+import { getProductPhotos } from "./shared/product-photos.js";
 const $ = (s) => document.querySelector(s);
 const money = (n) => "RD$ " + n.toLocaleString("es-DO");
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -28,7 +29,7 @@ function renderGrid() {
   const list = products.filter((p) => (cat === "todos" || p.cat === cat) &&
     (!q || `${p.name} ${p.sub} ${p.cat}`.toLowerCase().includes(q)));
   $("#grid").innerHTML = list.length ? list.map((p) => `
-    <article class="card"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">` : p.icon}</div>
+    <article class="card"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">` : p.icon}${p.photoCount > 1 ? `<span class="product-photo-count">${p.photoCount} fotos</span>` : ''}</div>
     <div class="b"><h4>${esc(p.name)}</h4><small>${esc(CATEGORIES.find((category) => category.id === p.cat)?.name || '')}</small><small>${esc(p.sub || '')}</small></div>
     <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${p.id}" aria-label="Agregar ${esc(p.name)}">🛒</button></div></article>`).join("")
     : `<p class="empty">No encontramos productos. Escríbenos por WhatsApp y te ayudamos.</p>`;
@@ -149,7 +150,7 @@ setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
 function usePublishedCatalog() {
   const adminProducts = publishedProducts.map((p) => ({
-    id: p.id, img: p.photo, cat: p.category, name: p.name,
+    id: p.id, img: p.photo, photoCount: getProductPhotos(p).length, cat: p.category, name: p.name,
     sub: p.description, price: p.price, icon: "🛍️"
   }));
   products = [...adminProducts, ...sucursalProducts];
@@ -208,7 +209,8 @@ watchOpenStores(async (stores) => {
     const storeProducts = await getStoreProducts(primaryStore.id);
     sucursalProducts = storeProducts.map(product => ({
       id: `sucursal-${primaryStore.id}-${product.id}`,
-      img: product.photo,
+      img: getProductPhotos(product)[0] || null,
+      photoCount: getProductPhotos(product).length,
       cat: categoryIdFromValue(product.category),
       name: product.name,
       sub: product.description,
