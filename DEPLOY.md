@@ -8,7 +8,7 @@ El catálogo público se administra desde **Mi Cuenta → Inventario LEDPOD** co
 
 El inventario Admin se separa en las pestañas **Públicos** y **Privados**. Cada producto se puede mover entre ambas; solo los públicos aparecen en la tienda LEDPOD. El inventario permite buscar por código de producto o nombre. Si no se indica un código, LEDPOD genera uno único automáticamente. Los productos que agregan los comercios desde sus paneles no se mezclan con la tienda pública de LEDPOD. Las imágenes nuevas se comprimen en el navegador antes de guardarse en Firestore.
 
-Al desplegar, publica también las reglas de `firestore.rules` en Firebase Console. El sitio necesita lectura pública de `catalogProducts` y `catalogSettings`; `catalogInventory` y las escrituras quedan limitados a administradores.
+Publica las reglas de `firestore.rules` en Firebase Console (o ejecuta `firebase deploy --only firestore:rules` desde un entorno autenticado; `firebase.json` ya apunta al archivo correcto). El inicio lee `catalogInventory` filtrando `visibility == "public"`; las reglas permiten leer solo esos productos y mantienen los privados y las escrituras limitados a administradores. `catalogProducts` se conserva como copia de compatibilidad para despliegues anteriores.
 
 La página Inicio muestra únicamente los productos públicos de Firebase; no sustituye un catálogo vacío por productos de ejemplo ni por imágenes locales. Las categorías del catálogo, incluidas Iluminación LED, Decoración, Eléctricos, Seguridad y Servicios Técnicos, se definen en `src/data.js`.
 

@@ -177,7 +177,10 @@ service cloud.firestore {
     }
 
     match /catalogInventory/{productId} {
-      allow read, write: if isAdmin();
+      // La tienda consulta este inventario con where(visibility == 'public').
+      // Los borradores siguen siendo visibles únicamente para Admin.
+      allow read: if isAdmin() || resource.data.visibility == 'public';
+      allow write: if isAdmin();
     }
 
     // Solo los documentos publicados se pueden consultar sin iniciar sesión.

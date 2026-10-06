@@ -3,7 +3,9 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  query,
   serverTimestamp,
+  where,
   writeBatch,
   getDocs
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
@@ -20,7 +22,8 @@ export function catalogProductCode(productId) {
 }
 
 export function watchCatalogProducts(callback, onError = console.error) {
-  return onSnapshot(publishedRef, snapshot => {
+  const publicInventoryQuery = query(inventoryRef, where('visibility', '==', 'public'));
+  return onSnapshot(publicInventoryQuery, snapshot => {
     callback(snapshot.docs.map(product => ({ id: product.id, ...product.data() })));
   }, onError);
 }
@@ -61,6 +64,13 @@ export async function syncPublishedCatalog() {
       code: data.code || catalogProductCode(product.id),
       visibility: 'public'
     };
+    if (data.visibility !== 'public' || !data.code) {
+      writes.push(batch => batch.set(doc(inventoryRef, product.id), {
+        code: publicData.code,
+        visibility: 'public',
+        updatedAt: serverTimestamp()
+      }, { merge: true }));
+    }
     const needsPublish = !published || [
       'code', 'name', 'category', 'description', 'price', 'photo', 'visibility'
     ].some(field => (published[field] ?? null) !== (publicData[field] ?? null));
