@@ -146,6 +146,8 @@ let latestProducts = [];
 function renderProducts(products) {
   latestProducts = products;
   const box = document.getElementById('productsList');
+  const count = document.getElementById('productCount');
+  if (count) count.textContent = `${products.length} ${products.length === 1 ? 'producto' : 'productos'}`;
   if (!products.length) {
     box.innerHTML = '<div class="empty">Todavía no tienes productos.</div>';
     return;
@@ -156,20 +158,23 @@ function renderProducts(products) {
     const stockBadge = !tieneStock
       ? ''
       : agotado
-        ? '<span class="role" style="background:#fde0e0;color:#b00020;margin-top:6px;display:inline-block">Agotado</span>'
-        : `<span class="role" style="margin-top:6px;display:inline-block${p.stock <= 3 ? ';background:#fff3d6;color:#8a5a00' : ''}">Stock: ${p.stock}</span>`;
+        ? '<span class="product-stock product-stock-empty">Agotado</span>'
+        : `<span class="product-stock${p.stock <= 3 ? ' product-stock-low' : ''}">Stock: ${p.stock}</span>`;
     return `
-    <article class="card">
-      <div class="pic">
-        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '🍽️'}
+    <article class="card product-tile">
+      <div class="pic product-tile-photo${p.photo ? '' : ' product-tile-no-photo'}">
+        ${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}">` : '📦'}
       </div>
-      <h3>${esc(p.name)}</h3>
-      <div class="muted">${esc(p.description || '')}</div>
+      <div class="product-tile-body">
+        <h3>${esc(p.name)}</h3>
+        ${p.category ? `<span class="product-category">${esc(p.category)}</span>` : ''}
+        <div class="muted">${esc(p.description || '')}</div>
+      </div>
       <div class="price">${money(p.price)}</div>
-      ${stockBadge}
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button type="button" class="btn" data-edit="${p.id}" style="flex:1">Editar</button>
-        <button type="button" class="btn" data-delete="${p.id}" style="flex:1">Eliminar</button>
+      ${stockBadge ? `<div>${stockBadge}</div>` : ''}
+      <div class="product-tile-actions">
+        <button type="button" class="btn" data-edit="${p.id}">Editar</button>
+        <button type="button" class="btn" data-delete="${p.id}">Eliminar</button>
       </div>
     </article>
   `;
@@ -207,12 +212,16 @@ function startEditingProduct(productId) {
 
   const preview = document.getElementById('prodPhotoPreview');
   const btnQuitarFoto = document.getElementById('btnQuitarFoto');
+  const placeholder = document.getElementById('prodPhotoPlaceholder');
   if (product.photo) {
     preview.src = product.photo;
     preview.style.display = 'block';
+    placeholder.style.display = 'none';
     btnQuitarFoto.style.display = 'inline-block';
   } else {
+    preview.removeAttribute('src');
     preview.style.display = 'none';
+    placeholder.style.display = '';
     btnQuitarFoto.style.display = 'none';
   }
 
@@ -225,7 +234,9 @@ function resetProductForm() {
   editingProductId = null;
   pendingPhotoDataUrl = null;
   document.getElementById('productForm')?.reset();
+  document.getElementById('prodPhotoPreview').removeAttribute('src');
   document.getElementById('prodPhotoPreview').style.display = 'none';
+  document.getElementById('prodPhotoPlaceholder').style.display = '';
   document.getElementById('btnQuitarFoto').style.display = 'none';
   document.getElementById('btnProductSubmit').textContent = 'Agregar producto';
   document.getElementById('btnCancelarEdicion').style.display = 'none';
@@ -298,6 +309,7 @@ export function initMerchantDashboard(session) {
       pendingPhotoDataUrl = await compressImageToDataUrl(file);
       preview.src = pendingPhotoDataUrl;
       preview.style.display = 'block';
+      document.getElementById('prodPhotoPlaceholder').style.display = 'none';
       document.getElementById('btnQuitarFoto').style.display = 'inline-block';
     } catch (err) {
       console.error(err);
@@ -311,7 +323,9 @@ export function initMerchantDashboard(session) {
     const input = document.getElementById('prodPhotoInput');
     const preview = document.getElementById('prodPhotoPreview');
     if (input) input.value = '';
+    preview.removeAttribute('src');
     preview.style.display = 'none';
+    document.getElementById('prodPhotoPlaceholder').style.display = '';
     document.getElementById('btnQuitarFoto').style.display = 'none';
   });
 

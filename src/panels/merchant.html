@@ -41,32 +41,53 @@
   </div>
 
   <div class="dash-section" data-section="productos" style="display:none">
-    <h2>🛍️ Productos</h2>
-    <div class="box" style="max-width:520px;margin-bottom:18px">
-      <form id="productForm">
-        <div class="field"><label>Nombre *</label><input id="prodNameInput" required></div>
-        <div class="field"><label>Precio (RD$) *</label><input id="prodPriceInput" type="number" min="0" step="0.01" required></div>
-        <div class="field"><label>Categoría</label><input id="prodCategoryInput"></div>
-        <div class="field"><label>Descripción</label><input id="prodDescriptionInput"></div>
-        <div class="field">
-          <label>Stock (unidades disponibles)</label>
-          <input id="prodStockInput" type="number" min="0" step="1" placeholder="Déjalo vacío = sin límite">
-          <small class="muted">Si pones un número, el producto se marca "Agotado" y no se puede pedir cuando llega a 0 — se descuenta solo cuando confirmas cada pedido. Vacío = no controlas inventario para este producto.</small>
-        </div>
-        <div class="field">
-          <label>Foto del producto</label>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <img id="prodPhotoPreview" class="photo-preview" style="display:none">
-            <input id="prodPhotoInput" type="file" accept="image/*" capture="environment">
+    <div class="page-heading">
+      <div>
+        <span class="role">CATÁLOGO DEL COMERCIO</span>
+        <h1>🛍️ Tus productos</h1>
+        <p class="muted">Organiza tu catálogo con fotos, precios y disponibilidad.</p>
+      </div>
+    </div>
+    <div class="box product-editor-shell">
+      <form id="productForm" class="product-editor">
+        <div class="product-editor-grid">
+          <div class="product-editor-fields">
+            <div class="field"><label for="prodNameInput">Nombre del producto *</label><input id="prodNameInput" required placeholder="Ej. Panel LED 18W"></div>
+            <div class="product-editor-row">
+              <div class="field"><label for="prodPriceInput">Precio (RD$) *</label><input id="prodPriceInput" type="number" min="0" step="0.01" required placeholder="0.00"></div>
+              <div class="field"><label for="prodCategoryInput">Categoría</label><input id="prodCategoryInput" placeholder="Iluminación, seguridad…"></div>
+            </div>
+            <div class="field"><label for="prodDescriptionInput">Descripción</label><input id="prodDescriptionInput" placeholder="Detalles y características"></div>
+            <div class="field">
+              <label for="prodStockInput">Unidades disponibles</label>
+              <input id="prodStockInput" type="number" min="0" step="1" placeholder="Sin límite de unidades">
+              <small class="muted">Al llegar a cero, el producto se marca como agotado. Déjalo vacío para no controlar stock.</small>
+            </div>
           </div>
-          <small class="muted">Puedes tomar la foto con la cámara del celular o subir un archivo. Se comprime automáticamente.</small>
-          <button type="button" id="btnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+          <div class="product-editor-media">
+            <div class="field">
+              <label for="prodPhotoInput">Foto del producto</label>
+              <div class="product-photo-preview">
+                <img id="prodPhotoPreview" style="display:none" alt="Vista previa del producto">
+                <span id="prodPhotoPlaceholder">📦<small>La foto aparecerá aquí</small></span>
+              </div>
+              <input id="prodPhotoInput" type="file" accept="image/*" capture="environment">
+              <small class="muted">Sube una foto clara del producto o tómala con la cámara.</small>
+              <button type="button" id="btnQuitarFoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+            </div>
+          </div>
         </div>
-        <button type="submit" id="btnProductSubmit" class="btn primary">Agregar producto</button>
-        <button type="button" id="btnCancelarEdicion" class="btn" style="display:none">Cancelar edición</button>
+        <div class="product-editor-actions">
+          <button type="submit" id="btnProductSubmit" class="btn primary">Agregar producto</button>
+          <button type="button" id="btnCancelarEdicion" class="btn" style="display:none">Cancelar edición</button>
+        </div>
       </form>
     </div>
-    <div id="productsList" class="grid"><div class="empty">Todavía no tienes productos.</div></div>
+    <div class="section-head product-shelf-heading">
+      <div><span class="role">EN TU CATÁLOGO</span><h2>Productos publicados</h2></div>
+      <span id="productCount" class="product-count">0 productos</span>
+    </div>
+    <div id="productsList" class="product-shelf"><div class="empty">Todavía no tienes productos.</div></div>
   </div>
 
   <div class="dash-section" data-section="pedidos" style="display:none">

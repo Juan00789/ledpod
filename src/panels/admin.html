@@ -31,46 +31,59 @@
     <div class="box" style="margin-bottom:18px">
       <div class="section-head">
         <div>
+          <span class="role">CATÁLOGO DE LA TIENDA</span>
           <h2>🛍️ Inventario LEDPOD</h2>
-          <p class="muted">Administra fotos, nombres, categorías, precios y descripciones. Elige si cada producto es público o privado.</p>
+          <p class="muted">Agrega productos con foto y precio. Los productos públicos aparecen en el inicio.</p>
         </div>
       </div>
-      <form id="catalogProductForm" style="max-width:520px">
-        <div class="field"><label for="catalogProductName">Nombre *</label><input id="catalogProductName" required maxlength="100"></div>
-        <div class="field"><label for="catalogProductCategory">Categoría *</label>
-          <select id="catalogProductCategory" required></select>
-        </div>
-        <div class="field"><label for="catalogProductPrice">Precio (RD$) *</label><input id="catalogProductPrice" type="number" min="0" step="0.01" required></div>
-        <div class="field"><label for="catalogProductDescription">Descripción</label><textarea id="catalogProductDescription" rows="3" maxlength="500"></textarea></div>
-        <div class="field">
-          <label for="catalogProductVisibility">Visibilidad</label>
-          <select id="catalogProductVisibility">
-            <option value="public" selected>Público: visible en la tienda</option>
-            <option value="private">Privado: no aparece en la tienda</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="catalogProductPhoto">Foto del producto</label>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <img id="catalogProductPhotoPreview" class="photo-preview" style="display:none" alt="Vista previa del producto">
-            <input id="catalogProductPhoto" type="file" accept="image/*" capture="environment">
+      <form id="catalogProductForm" class="product-editor">
+        <div class="product-editor-grid">
+          <div class="product-editor-fields">
+            <div class="field"><label for="catalogProductName">Nombre del producto *</label><input id="catalogProductName" required maxlength="100" placeholder="Ej. Tira LED 5050"></div>
+            <div class="product-editor-row">
+              <div class="field"><label for="catalogProductCategory">Categoría *</label>
+                <select id="catalogProductCategory" required></select>
+              </div>
+              <div class="field"><label for="catalogProductPrice">Precio (RD$) *</label><input id="catalogProductPrice" type="number" min="0" step="0.01" required placeholder="0.00"></div>
+            </div>
+            <div class="field"><label for="catalogProductDescription">Descripción</label><textarea id="catalogProductDescription" rows="3" maxlength="500" placeholder="Detalles, medidas o características"></textarea></div>
+            <div class="field">
+              <label for="catalogProductVisibility">Visibilidad en la tienda</label>
+              <select id="catalogProductVisibility">
+                <option value="public" selected>Público: visible en el inicio</option>
+                <option value="private">Privado: solo inventario</option>
+              </select>
+            </div>
           </div>
-          <small class="muted">Puedes subir una imagen o tomarla con la cámara. Se optimiza antes de guardarla.</small>
-          <button type="button" id="catalogProductRemovePhoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+          <div class="product-editor-media">
+            <div class="field">
+              <label for="catalogProductPhoto">Foto del producto</label>
+              <div class="product-photo-preview">
+                <img id="catalogProductPhotoPreview" style="display:none" alt="Vista previa del producto">
+                <span id="catalogProductPhotoPlaceholder">📦<small>La foto aparecerá aquí</small></span>
+              </div>
+              <input id="catalogProductPhoto" type="file" accept="image/*" capture="environment">
+              <small class="muted">Sube una foto clara del producto. Se optimiza antes de guardarla.</small>
+              <button type="button" id="catalogProductRemovePhoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+            </div>
+          </div>
         </div>
-        <button id="catalogProductSubmit" type="submit" class="btn primary">Agregar al inventario</button>
-        <button id="catalogProductCancel" type="button" class="btn" style="display:none">Cancelar edición</button>
+        <div class="product-editor-actions">
+          <button id="catalogProductSubmit" type="submit" class="btn primary">Agregar producto</button>
+          <button id="catalogProductCancel" type="button" class="btn" style="display:none">Cancelar edición</button>
+        </div>
       </form>
       <button id="catalogSeedDefaults" type="button" class="btn" style="display:none;margin-top:14px">Importar los 4 productos actuales con sus fotos</button>
     </div>
     <div class="box">
       <div class="section-head">
         <div>
+          <span class="role">PRODUCTOS DE LEDPOD</span>
           <h2>Inventario de productos</h2>
           <p class="muted">Los productos privados nunca aparecen en la tienda pública.</p>
         </div>
       </div>
-      <div id="catalogInventoryList" class="grid">
+      <div id="catalogInventoryList" class="product-shelf">
         <div class="empty">Cargando inventario…</div>
       </div>
     </div>

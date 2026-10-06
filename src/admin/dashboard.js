@@ -865,16 +865,19 @@ function renderCatalogInventory(products) {
     return;
   }
   list.innerHTML = products.map(product => `
-    <article class="card">
-      <div class="pic">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '🛍️'}</div>
-      <h3>${esc(product.name)}</h3>
-      <div class="muted">${esc(product.category || '')} · ${esc(product.description || '')}</div>
+    <article class="card product-tile">
+      <div class="pic product-tile-photo${product.photo ? '' : ' product-tile-no-photo'}">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '📦'}</div>
+      <div class="product-tile-body">
+        <h3>${esc(product.name)}</h3>
+        <span class="product-category">${esc(product.category || 'Sin categoría')}</span>
+        <div class="muted">${esc(product.description || '')}</div>
+      </div>
       <div class="price">RD$ ${esc(product.price ?? 0)}</div>
-      <small class="role">${product.visibility === 'private' ? 'Privado' : 'Público'}</small>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        ${product.visibility === 'private' ? `<button type="button" class="btn catalogProductPublish" data-id="${esc(product.id)}" style="flex:1">Publicar en tienda</button>` : ''}
-        <button type="button" class="btn catalogProductEdit" data-id="${esc(product.id)}" style="flex:1">Editar</button>
-        <button type="button" class="btn catalogProductDelete" data-id="${esc(product.id)}" style="flex:1">Eliminar</button>
+      <span class="product-stock${product.visibility === 'private' ? ' product-stock-empty' : ''}">${product.visibility === 'private' ? 'Privado' : 'Publicado'}</span>
+      <div class="product-tile-actions">
+        ${product.visibility === 'private' ? `<button type="button" class="btn primary catalogProductPublish" data-id="${esc(product.id)}">Publicar</button>` : ''}
+        <button type="button" class="btn catalogProductEdit" data-id="${esc(product.id)}">Editar</button>
+        <button type="button" class="btn catalogProductDelete" data-id="${esc(product.id)}">Eliminar</button>
       </div>
     </article>
   `).join('');
@@ -885,10 +888,12 @@ function resetCatalogProductForm() {
   pendingCatalogPhoto = null;
   document.getElementById('catalogProductForm')?.reset();
   const preview = document.getElementById('catalogProductPhotoPreview');
+  const photoPlaceholder = document.getElementById('catalogProductPhotoPlaceholder');
   if (preview) {
     preview.removeAttribute('src');
     preview.style.display = 'none';
   }
+  if (photoPlaceholder) photoPlaceholder.style.display = '';
   const fileInput = document.getElementById('catalogProductPhoto');
   if (fileInput) fileInput.value = '';
   const removeButton = document.getElementById('catalogProductRemovePhoto');
@@ -942,6 +947,7 @@ function setupCatalogInventoryPanel() {
       pendingCatalogPhoto = await compressImageToDataUrl(file);
       preview.src = pendingCatalogPhoto;
       preview.style.display = 'block';
+      photoPlaceholder.style.display = 'none';
       removePhoto.style.display = 'inline-block';
     } catch (error) {
       console.error(error);
@@ -955,6 +961,7 @@ function setupCatalogInventoryPanel() {
     photoInput.value = '';
     preview.removeAttribute('src');
     preview.style.display = 'none';
+    photoPlaceholder.style.display = '';
     removePhoto.style.display = 'none';
   });
 
@@ -992,10 +999,12 @@ function setupCatalogInventoryPanel() {
       if (product.photo) {
         preview.src = product.photo;
         preview.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
         removePhoto.style.display = 'inline-block';
       } else {
         preview.removeAttribute('src');
         preview.style.display = 'none';
+        photoPlaceholder.style.display = '';
         removePhoto.style.display = 'none';
       }
       document.getElementById('catalogProductSubmit').textContent = 'Guardar cambios';
