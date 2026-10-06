@@ -1,7 +1,7 @@
 // Edita aquí tus productos. `img` es opcional (ej. "./src/assets/products/tira-led.jpg").
 export const CATEGORIES = [
-  { id: "iluminacion", icon: "💡", name: "Iluminación LED", sub: "Bombillos, paneles, tiras LED" },
-  { id: "decoracion", icon: "✨", name: "Decoración", sub: "Tiras, guirnaldas, ambientes" },
+  { id: "iluminacion", icon: "💡", name: "Iluminación LED", sub: "Luces interiores y exteriores, lámparas" },
+  { id: "decoracion", icon: "✨", name: "Decoración", sub: "Pisos SPC, PVC mármol, WPC y paneles" },
   { id: "electricos", icon: "🔌", name: "Eléctricos", sub: "Cables, enchufes, accesorios" },
   { id: "seguridad", icon: "📹", name: "Seguridad", sub: "Cámaras, alarmas, accesorios" },
   { id: "servicios-tecnicos", icon: "🛠️", name: "Servicios Técnicos", sub: "Instalación y asesoría especializada" }
@@ -29,7 +29,7 @@ export const PRODUCTS = [
 ];
 export const WHATSAPP = "18498865556";
 export const SLIDES = [
-  ["Decoraciones & Luces", "Todo lo que necesitas para iluminar y decorar tus espacios."],
-  ["Seguridad para tu hogar", "Cámaras, alarmas e instalación profesional."],
-  ["Iluminación LED", "Paneles, tiras y reflectores para cada ambiente."]
+  ["Luces y luminarias", "Iluminación LED eficiente y lámparas decorativas para interiores y exteriores."],
+  ["Renueva tus espacios", "Pisos SPC, paneles acanalados, PVC mármol y WPC para exteriores."],
+  ["Asesoría y entrega", "Consulta tus proyectos y coordina delivery o recogida en tienda."]
 ];
