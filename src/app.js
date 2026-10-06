@@ -1,4 +1,4 @@
-import { CATEGORIES, PRODUCTS as DEFAULT_PRODUCTS, WHATSAPP, SLIDES } from "./data.js";
+import { CATEGORIES, WHATSAPP, SLIDES } from "./data.js";
 import { watchCatalogProducts, watchCatalogState } from "./catalog/public-catalog.js";
 const $ = (s) => document.querySelector(s);
 const money = (n) => "RD$ " + n.toLocaleString("es-DO");
@@ -7,15 +7,14 @@ const store = {
   get() { try { return JSON.parse(localStorage.getItem("ledpop-cart")) || {}; } catch { return {}; } },
   set(v) { try { localStorage.setItem("ledpop-cart", JSON.stringify(v)); } catch {} }
 };
-let products = DEFAULT_PRODUCTS;
+let products = [];
 let publishedProducts = [];
 let managedCatalog = false;
 let cart = store.get(), cat = "todos", query = "";
 
 function renderCats() {
   $("#categorias").innerHTML = CATEGORIES.map((c) =>
-    `<button class="cat ${cat === c.id ? "on" : ""}" data-cat="${c.id}"><span>${c.icon}</span><b>${esc(c.name)}</b><small>${esc(c.sub)}</small></button>`).join("") +
-    `<a class="cat service-cat" href="#servicios"><span>🛠️</span><b>Servicios Técnicos</b><small>Instalación y asesoría</small></a>`;
+    `<button class="cat ${cat === c.id ? "on" : ""}" data-cat="${c.id}"><span>${c.icon}</span><b>${esc(c.name)}</b><small>${esc(c.sub)}</small></button>`).join("");
 }
 function renderGrid() {
   const q = query.trim().toLowerCase();
@@ -98,10 +97,11 @@ function usePublishedCatalog() {
 }
 
 function useDefaultCatalog() {
-  products = DEFAULT_PRODUCTS;
+  products = [];
   renderGrid();
   renderCart();
-  $("#catalogStatus").hidden = true;
+  $("#catalogStatus").textContent = "Todavía no hay productos publicados. Agrégalos desde el inventario Admin y márcalos como públicos.";
+  $("#catalogStatus").hidden = false;
 }
 
 watchCatalogProducts((items) => {
@@ -113,8 +113,11 @@ watchCatalogProducts((items) => {
   }
 }, (error) => {
   console.error("No se pudo cargar el catálogo LEDPOD:", error);
+  products = [];
+  renderGrid();
+  renderCart();
   const status = $("#catalogStatus");
-  status.textContent = "No se pudo actualizar el catálogo. Se muestran los productos guardados en este sitio.";
+  status.textContent = "No se pudo conectar con el catálogo de Firebase. Intenta de nuevo más tarde.";
   status.hidden = false;
 });
 watchCatalogState((initialized) => {
@@ -127,7 +130,7 @@ watchCatalogState((initialized) => {
 }, (error) => {
   console.error("No se pudo comprobar el estado del catálogo LEDPOD:", error);
   const status = $("#catalogStatus");
-  status.textContent = "No se pudo comprobar si el catálogo está actualizado. Se muestran los productos guardados en este sitio.";
+  status.textContent = "No se pudo comprobar el estado del catálogo en Firebase.";
   status.hidden = false;
 });
 

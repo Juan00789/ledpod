@@ -3,7 +3,8 @@ export const CATEGORIES = [
   { id: "iluminacion", icon: "💡", name: "Iluminación LED", sub: "Bombillos, paneles, tiras LED" },
   { id: "decoracion", icon: "✨", name: "Decoración", sub: "Tiras, guirnaldas, ambientes" },
   { id: "electricos", icon: "🔌", name: "Eléctricos", sub: "Cables, enchufes, accesorios" },
-  { id: "seguridad", icon: "📹", name: "Seguridad", sub: "Cámaras, alarmas, accesorios" }
+  { id: "seguridad", icon: "📹", name: "Seguridad", sub: "Cámaras, alarmas, accesorios" },
+  { id: "servicios-tecnicos", icon: "🛠️", name: "Servicios Técnicos", sub: "Instalación y asesoría especializada" }
 ];
 export const PRODUCTS = [
   { id: "tira-5050", img: "./src/assets/products/tira-led-5050.jpg", cat: "iluminacion", name: "Tira LED 5050 12V", sub: "Blanco cálido | 5 metros", price: 1250, icon: "💡" },

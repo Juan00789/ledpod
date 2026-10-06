@@ -10,7 +10,7 @@ El inventario Admin se separa en las pestañas **Públicos** y **Privados**. Cad
 
 Al desplegar, publica también las reglas de `firestore.rules` en Firebase Console. El sitio necesita lectura pública de `catalogProducts` y `catalogSettings`; `catalogInventory` y las escrituras quedan limitados a administradores.
 
-Si todavía no hay publicaciones y el inventario Admin no se ha inicializado, la tienda conserva los productos locales de `src/data.js` y sus imágenes de `src/assets/products/`. Si el catálogo Admin ya se inicializó pero no hay productos públicos, la tienda no muestra productos privados.
+La página Inicio muestra únicamente los productos públicos de Firebase; no sustituye un catálogo vacío por productos de ejemplo ni por imágenes locales. Las categorías del catálogo, incluidas Iluminación LED, Decoración, Eléctricos, Seguridad y Servicios Técnicos, se definen en `src/data.js`.
 
 ## Compartir y dominio
 

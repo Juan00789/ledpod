@@ -118,7 +118,7 @@
 .product-editor-actions .btn{min-width:160px}
 .product-shelf-heading{margin:24px 0 14px}
 .product-shelf-heading h2{margin:5px 0 0}
-.catalog-inventory-toolbar{display:grid;grid-template-columns:auto minmax(220px,1fr);align-items:center;gap:14px;margin:18px 0}
+.catalog-inventory-toolbar{display:grid;grid-template-columns:auto minmax(220px,1fr) auto;align-items:center;gap:14px;margin:18px 0}
 .catalog-inventory-tabs{display:flex;gap:7px}
 .catalog-inventory-tabs .btn{display:flex;align-items:center;gap:8px}
 .catalog-inventory-tabs .btn.active{background:var(--orange);color:#111}
@@ -149,6 +149,7 @@
   .product-photo-preview{height:190px}
   .product-shelf{grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
   .catalog-inventory-toolbar{grid-template-columns:1fr}
+  .catalog-store-link{width:100%;text-align:center}
 }
 @media(max-width:430px){
   .product-editor-row{grid-template-columns:1fr;gap:0}

@@ -1097,7 +1097,9 @@ function setupCatalogInventoryPanel() {
         await addCatalogProduct(product);
         showToast(product.visibility === 'public' ? 'Producto publicado en la tienda.' : 'Producto guardado en el inventario privado.');
       }
+      activeInventoryVisibility = product.visibility;
       resetCatalogProductForm();
+      renderCatalogInventory(catalogProducts);
     } catch (error) {
       console.error(error);
       showToast(error.message || 'No se pudo guardar el producto. Revisa los datos y las reglas de Firestore.', true);
