@@ -10,7 +10,7 @@ El inventario Admin se separa en las pestañas **Públicos** y **Privados**. Cad
 
 Publica las reglas de `firestore.rules` en Firebase Console (o ejecuta `firebase deploy --only firestore:rules` desde un entorno autenticado; `firebase.json` ya apunta al archivo correcto). El inicio lee `catalogInventory` filtrando `visibility == "public"`; las reglas permiten leer solo esos productos y mantienen los privados y las escrituras limitados a administradores. `catalogProducts` se conserva como copia de compatibilidad para despliegues anteriores.
 
-La página Inicio muestra únicamente los productos públicos de Firebase; no sustituye un catálogo vacío por productos de ejemplo ni por imágenes locales. Las categorías del catálogo, incluidas Iluminación LED, Decoración, Eléctricos, Seguridad y Servicios Técnicos, se definen en `src/data.js`.
+La página Inicio muestra únicamente los productos públicos de Firebase; no sustituye un catálogo vacío por productos de ejemplo ni por imágenes locales. Si no hay productos publicados, informa que el catálogo está en preparación y ofrece consultar disponibilidad por WhatsApp. Las categorías del catálogo, incluidas Iluminación LED, Decoración, Eléctricos, Seguridad y Servicios Técnicos, se definen en `src/data.js`.
 
 ## Compartir y dominio
 

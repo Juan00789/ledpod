@@ -30,6 +30,9 @@ function renderGrid() {
   const q = query.trim().toLowerCase();
   const list = products.filter((p) => (cat === "todos" || p.cat === cat) &&
     (!q || `${p.name} ${p.sub} ${p.cat}`.toLowerCase().includes(q)));
+  const emptyMessage = products.length
+    ? "No encontramos productos que coincidan con tu búsqueda o categoría."
+    : "Nuestro catálogo está en preparación.";
   $("#grid").innerHTML = list.length ? list.map((p) => `
     <article class="card product-card">
       <button class="product-card-preview" type="button" data-product-detail="${esc(p.id)}" aria-label="Ver detalles de ${esc(p.name)}">
@@ -39,7 +42,7 @@ function renderGrid() {
       <div class="b"><h4>${esc(p.name)}</h4><small>${esc(CATEGORIES.find((category) => category.id === p.cat)?.name || '')}</small><small>${esc(p.sub || '')}</small></div>
       <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${esc(p.id)}" aria-label="Agregar ${esc(p.name)} al carrito">🛒</button></div>
     </article>`).join("")
-    : `<p class="empty">No encontramos productos. Escríbenos por WhatsApp y te ayudamos.</p>`;
+    : `<div class="empty"><p>${emptyMessage}</p><a class="catalog-contact-link" href="https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Hola LEDPOD, quisiera consultar disponibilidad de productos.")}" target="_blank" rel="noopener noreferrer">Consulta por WhatsApp ↗</a></div>`;
 }
 
 function renderProductDetailPhoto() {
@@ -222,7 +225,7 @@ function usePublishedCatalog() {
   renderGrid();
   renderCart();
   if (!products.length) {
-    $("#catalogStatus").textContent = "Todavía no hay productos públicos. En el panel Admin, cambia la visibilidad del producto a Público para mostrarlo aquí.";
+    $("#catalogStatus").textContent = "Todavía no hay productos publicados.";
     $("#catalogStatus").hidden = false;
   } else {
     $("#catalogStatus").hidden = true;

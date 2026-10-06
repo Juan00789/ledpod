@@ -3,22 +3,28 @@
     <div>
       <span class="role">MI LEDPOD</span>
       <h1>Hola 👋</h1>
-      <p class="muted">Descubre productos y comercios disponibles para ti.</p>
+      <p class="muted">Descubre los productos disponibles en nuestra tienda.</p>
     </div>
     <div id="clientToast" class="toast" role="status"></div>
   </div>
 
   <div class="dash-section" data-section="inicio">
-    <div id="storeBrowser">
-      <h2>🏪 Comercios abiertos</h2>
-      <div class="filters" style="grid-template-columns:1fr;margin-bottom:14px">
-        <input id="storeSearchInput" placeholder="Buscar comercio por nombre o categoría…" autocomplete="off">
+    <div id="catalogBrowser">
+      <div class="section-head">
+        <div>
+          <span class="role">TIENDA LEDPOD</span>
+          <h2>🛍️ Productos disponibles</h2>
+        </div>
       </div>
-      <div id="storeGrid" class="grid"><div class="empty">Cargando comercios…</div></div>
+      <div id="catalogCategoryChips" class="tabs" aria-label="Filtrar productos por categoría"></div>
+      <div class="filters" style="grid-template-columns:1fr;margin:0 0 14px">
+        <input id="catalogSearchInput" type="search" placeholder="Buscar productos por nombre, código o categoría…" autocomplete="off">
+      </div>
+      <div id="catalogProductGrid" class="grid"><div class="empty">Cargando productos…</div></div>
     </div>
 
     <div id="productBrowser" style="display:none">
-      <button type="button" id="btnVolverTiendas" class="btn">← Volver a comercios</button>
+      <button type="button" id="btnVolverTiendas" class="btn">← Volver a productos</button>
       <h2 id="storeTitle" style="margin-top:12px"></h2>
       <div id="productGrid" class="grid"></div>
     </div>
@@ -26,13 +32,13 @@
 
   <div class="dash-section" data-section="favoritos" style="display:none">
     <h2>❤️ Tus comercios favoritos</h2>
-    <div id="favoritesGrid" class="grid"><div class="empty">Todavía no tienes comercios favoritos. Toca el corazón en cualquier comercio de Inicio.</div></div>
+    <div id="favoritesGrid" class="grid"><div class="empty">Todavía no tienes comercios favoritos disponibles.</div></div>
   </div>
 
   <div class="dash-section" data-section="carrito" style="display:none">
     <h2>🛒 Tu carrito</h2>
     <div id="cartBox" class="box">
-      <div class="empty" id="cartEmpty">Tu carrito está vacío. Elige un comercio en Inicio.</div>
+      <div class="empty" id="cartEmpty">Tu carrito está vacío.</div>
       <div id="cartItems" style="display:none"></div>
     </div>
   </div>

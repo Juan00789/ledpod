@@ -12,6 +12,9 @@ import { db } from '../../firebase.js';
 import { esc, money, formatDate, showToast } from '../shared/utils.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
 import { watchOpenStores, getStoreProducts } from '../catalog/stores-service.js';
+import { watchCatalogProducts } from '../catalog/public-catalog.js';
+import { CATEGORIES, categoryIdFromValue } from '../data.js';
+import { getProductPhotos } from '../shared/product-photos.js';
 import {
   createOrder,
   watchCustomerOrders,
@@ -34,6 +37,66 @@ let cartAddress = '';
 let currentUid = null;
 let favoriteIds = [];         // storeId[] — cargados de customers/{uid}.favorites
 let latestOpenStores = [];    // última lista de comercios abiertos (para pintar favoritos sin otra consulta)
+let catalogProducts = [];
+let catalogSearch = '';
+let catalogCategory = '';
+
+function renderCatalog() {
+  const grid = document.getElementById('catalogProductGrid');
+  const chips = document.getElementById('catalogCategoryChips');
+  if (!grid || !chips) return;
+
+  const categories = CATEGORIES.filter((category) =>
+    catalogProducts.some((product) => categoryIdFromValue(product.category) === category.id)
+  );
+  chips.innerHTML = [
+    `<button type="button" class="btn ${catalogCategory ? '' : 'primary'}" data-catalog-category="">Todos</button>`,
+    ...categories.map((category) =>
+      `<button type="button" class="btn ${catalogCategory === category.id ? 'primary' : ''}" data-catalog-category="${category.id}">${esc(category.name)}</button>`
+    )
+  ].join('');
+  chips.querySelectorAll('[data-catalog-category]').forEach((button) => {
+    button.addEventListener('click', () => {
+      catalogCategory = button.dataset.catalogCategory;
+      renderCatalog();
+    });
+  });
+
+  if (!catalogProducts.length) {
+    grid.innerHTML = '<div class="empty">Todavía no hay productos disponibles en la tienda.</div>';
+    return;
+  }
+
+  const query = catalogSearch.trim().toLowerCase();
+  const filtered = catalogProducts.filter((product) => {
+    const categoryId = categoryIdFromValue(product.category);
+    const category = CATEGORIES.find((item) => item.id === categoryId);
+    const matchesCategory = !catalogCategory || categoryId === catalogCategory;
+    const searchable = `${product.name || ''} ${product.code || ''} ${product.description || ''} ${category?.name || product.category || ''}`;
+    return matchesCategory && (!query || searchable.toLowerCase().includes(query));
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">No encontramos productos que coincidan con tu búsqueda o categoría.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((product) => {
+    const photo = getProductPhotos(product)[0];
+    const categoryId = categoryIdFromValue(product.category);
+    const category = CATEGORIES.find((item) => item.id === categoryId);
+    return `
+      <article class="card">
+        <div class="pic">${photo ? `<img src="${esc(photo)}" alt="${esc(product.name)}" loading="lazy">` : '📦'}</div>
+        <h3>${esc(product.name || 'Producto')}</h3>
+        <div class="muted">${esc(category?.name || product.category || 'Producto LEDPOD')}</div>
+        ${product.code ? `<div class="muted">${esc(product.code)}</div>` : ''}
+        ${product.description ? `<div class="muted">${esc(product.description)}</div>` : ''}
+        <div class="price">${money(Number(product.price) || 0)}</div>
+      </article>
+    `;
+  }).join('');
+}
 
 function renderStores(stores) {
   latestOpenStores = stores;
@@ -124,7 +187,7 @@ function renderFavorites() {
 }
 
 async function openStore(storeId, storeName) {
-  document.getElementById('storeBrowser').style.display = 'none';
+  document.getElementById('catalogBrowser').style.display = 'none';
   const productBrowser = document.getElementById('productBrowser');
   productBrowser.style.display = 'block';
   document.getElementById('storeTitle').textContent = storeName;
@@ -377,10 +440,10 @@ export function initClientDashboard(session) {
   currentUid = session.user.uid;
   const profile = session.profile;
 
-  // --- Volver a la lista de comercios desde la vista de productos ---
+  // --- Volver al catálogo desde los productos de un comercio favorito ---
   document.getElementById('btnVolverTiendas')?.addEventListener('click', () => {
     document.getElementById('productBrowser').style.display = 'none';
-    document.getElementById('storeBrowser').style.display = 'block';
+    document.getElementById('catalogBrowser').style.display = 'block';
   });
 
   renderCart();
@@ -439,7 +502,10 @@ export function initClientDashboard(session) {
     renderFavorites();
   }).catch(() => {});
 
-  document.getElementById('storeSearchInput')?.addEventListener('input', () => renderStores(latestOpenStores));
+  document.getElementById('catalogSearchInput')?.addEventListener('input', (event) => {
+    catalogSearch = event.target.value;
+    renderCatalog();
+  });
 
   document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -464,10 +530,19 @@ export function initClientDashboard(session) {
 
   // --- Suscripciones en vivo ---
   const unsubStores = watchOpenStores(renderStores);
+  const unsubCatalog = watchCatalogProducts((products) => {
+    catalogProducts = products;
+    renderCatalog();
+  }, (error) => {
+    console.error('No se pudieron cargar los productos públicos:', error);
+    const grid = document.getElementById('catalogProductGrid');
+    if (grid) grid.innerHTML = '<div class="empty">No se pudieron cargar los productos.</div>';
+  });
   const unsubOrders = watchCustomerOrders(currentUid, renderOrders);
 
   return () => {
     unsubStores();
+    unsubCatalog();
     unsubOrders();
   };
 }

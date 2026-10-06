@@ -74,6 +74,7 @@ main{margin:64px 0 40px var(--side);padding:20px}
 .product-detail-add{width:100%;height:auto}
 .product-detail-continue{border:1px solid #363e4b;background:transparent;color:var(--t)}
 .empty{color:var(--m);grid-column:1/-1;padding:20px}
+.catalog-contact-link{display:inline-block;margin-top:8px;color:var(--y);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .services{background:linear-gradient(180deg,rgba(13,15,20,.72),rgba(13,15,20,.94)),url("../assets/hero.jpg") center/cover;border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:14px}
 .services h3{font-size:19px;line-height:1.25}.services ul{list-style:none;padding:0;display:grid;gap:8px;font-size:13px}.services p{color:var(--m);font-size:13px}
 .social-links{display:grid;grid-template-columns:1fr 1fr;gap:8px}.social-links .social-link{padding:10px 12px;text-align:center;font-size:13px}
