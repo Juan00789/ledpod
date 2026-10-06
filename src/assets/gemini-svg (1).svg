@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente amarillo potente para LEDPOP -->
+    <linearGradient id="popYellow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE600"/>
+      <stop offset="100%" stop-color="#FF9900"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Silueta Superior: Cristo, Montaña y Teleférico -->
+  <g fill="url(#popYellow)">
+    <!-- Cristo Redentor -->
+    <path d="M 251 120 L 261 120 L 261 130 L 285 130 L 285 136 L 261 136 L 261 165 L 251 165 L 251 136 L 227 136 L 227 130 L 251 130 Z"/>
+    
+    <!-- Montaña Base -->
+    <path d="M 100 185 Q 256 160, 412 185 L 412 195 L 100 195 Z"/>
+
+    <!-- Palmas -->
+    <path d="M 125 185 Q 120 160, 110 155 Q 125 160, 132 165 Q 135 155, 145 158 Q 138 168, 130 185 Z"/>
+    <path d="M 387 185 Q 392 160, 402 155 Q 387 160, 380 165 Q 377 155, 367 158 Q 374 168, 382 185 Z"/>
+  </g>
+
+  <!-- Letra 'L' estilizada con destello tipo Pop -->
+  <text x="256" y="380" 
+        font-family="'Arial Black', 'Impact', sans-serif" 
+        font-weight="900" 
+        font-size="210" 
+        fill="#FFFFFF" 
+        text-anchor="middle"
+        letter-spacing="-5">LED</text>
+
+  <!-- Subtítulo de luces abajo -->
+  <rect x="110" y="415" width="292" height="12" rx="6" fill="url(#popYellow)" />
+</svg>

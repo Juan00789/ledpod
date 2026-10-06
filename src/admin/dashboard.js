@@ -9,6 +9,14 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 import { db } from '../../firebase.js';
 import { compressImageToDataUrl } from '../shared/img-utils.js';
+import { CATEGORIES, PRODUCTS } from '../data.js';
+import {
+  addCatalogProduct,
+  deleteCatalogProduct,
+  seedCatalogProducts,
+  updateCatalogProduct,
+  watchCatalogInventory
+} from '../catalog/public-catalog.js';
 import {
   ROLES,
   watchUsers,
@@ -840,6 +848,178 @@ function setupAdminProductsPanel() {
   });
 }
 
+let catalogProducts = [];
+let editingCatalogProductId = null;
+let pendingCatalogPhoto = null;
+
+function renderCatalogInventory(products) {
+  catalogProducts = products;
+  const list = document.getElementById('catalogInventoryList');
+  const seedButton = document.getElementById('catalogSeedDefaults');
+  if (!list) return;
+  if (seedButton) seedButton.style.display = products.length ? 'none' : 'inline-block';
+  if (!products.length) {
+    list.innerHTML = '<div class="empty">El inventario está vacío. Puedes agregar un producto o importar el catálogo que ya tiene fotos.</div>';
+    return;
+  }
+  list.innerHTML = products.map(product => `
+    <article class="card">
+      <div class="pic">${product.photo ? `<img src="${esc(product.photo)}" alt="${esc(product.name)}">` : '🛍️'}</div>
+      <h3>${esc(product.name)}</h3>
+      <div class="muted">${esc(product.category || '')} · ${esc(product.description || '')}</div>
+      <div class="price">RD$ ${esc(product.price ?? 0)}</div>
+      <small class="role">${product.visibility === 'private' ? 'Privado' : 'Público'}</small>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button type="button" class="btn catalogProductEdit" data-id="${esc(product.id)}" style="flex:1">Editar</button>
+        <button type="button" class="btn catalogProductDelete" data-id="${esc(product.id)}" style="flex:1">Eliminar</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+function resetCatalogProductForm() {
+  editingCatalogProductId = null;
+  pendingCatalogPhoto = null;
+  document.getElementById('catalogProductForm')?.reset();
+  const preview = document.getElementById('catalogProductPhotoPreview');
+  if (preview) {
+    preview.removeAttribute('src');
+    preview.style.display = 'none';
+  }
+  const fileInput = document.getElementById('catalogProductPhoto');
+  if (fileInput) fileInput.value = '';
+  const removeButton = document.getElementById('catalogProductRemovePhoto');
+  if (removeButton) removeButton.style.display = 'none';
+  const submitButton = document.getElementById('catalogProductSubmit');
+  if (submitButton) submitButton.textContent = 'Agregar al inventario';
+  const cancelButton = document.getElementById('catalogProductCancel');
+  if (cancelButton) cancelButton.style.display = 'none';
+}
+
+function setupCatalogInventoryPanel() {
+  const categorySelect = document.getElementById('catalogProductCategory');
+  if (categorySelect) {
+    categorySelect.innerHTML = CATEGORIES.map(category =>
+      `<option value="${esc(category.id)}">${esc(category.name)}</option>`
+    ).join('');
+  }
+
+  const form = document.getElementById('catalogProductForm');
+  const list = document.getElementById('catalogInventoryList');
+  const preview = document.getElementById('catalogProductPhotoPreview');
+  const photoInput = document.getElementById('catalogProductPhoto');
+  const removePhoto = document.getElementById('catalogProductRemovePhoto');
+  const unsubscribe = watchCatalogInventory(renderCatalogInventory, error => {
+    console.error(error);
+    if (list) list.innerHTML = '<div class="error" style="display:block">No se pudo cargar el inventario. Revisa Firebase y las reglas de Firestore.</div>';
+  });
+
+  document.getElementById('catalogSeedDefaults')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await seedCatalogProducts(PRODUCTS);
+      showToast('Se importó el catálogo actual con sus imágenes.');
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || 'No se pudo importar el catálogo.', true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  photoInput?.addEventListener('change', async () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    try {
+      pendingCatalogPhoto = await compressImageToDataUrl(file);
+      preview.src = pendingCatalogPhoto;
+      preview.style.display = 'block';
+      removePhoto.style.display = 'inline-block';
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || 'No se pudo procesar la imagen.', true);
+      photoInput.value = '';
+    }
+  });
+
+  removePhoto?.addEventListener('click', () => {
+    pendingCatalogPhoto = null;
+    photoInput.value = '';
+    preview.removeAttribute('src');
+    preview.style.display = 'none';
+    removePhoto.style.display = 'none';
+  });
+
+  document.getElementById('catalogProductCancel')?.addEventListener('click', resetCatalogProductForm);
+
+  list?.addEventListener('click', async event => {
+    const editButton = event.target.closest('.catalogProductEdit');
+    const deleteButton = event.target.closest('.catalogProductDelete');
+    if (editButton) {
+      const product = catalogProducts.find(item => item.id === editButton.dataset.id);
+      if (!product) return;
+      editingCatalogProductId = product.id;
+      pendingCatalogPhoto = product.photo || null;
+      document.getElementById('catalogProductName').value = product.name || '';
+      categorySelect.value = product.category || CATEGORIES[0].id;
+      document.getElementById('catalogProductPrice').value = product.price ?? '';
+      document.getElementById('catalogProductDescription').value = product.description || '';
+      document.getElementById('catalogProductVisibility').value = product.visibility || 'public';
+      if (product.photo) {
+        preview.src = product.photo;
+        preview.style.display = 'block';
+        removePhoto.style.display = 'inline-block';
+      } else {
+        preview.removeAttribute('src');
+        preview.style.display = 'none';
+        removePhoto.style.display = 'none';
+      }
+      document.getElementById('catalogProductSubmit').textContent = 'Guardar cambios';
+      document.getElementById('catalogProductCancel').style.display = 'inline-block';
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (deleteButton && confirm('¿Eliminar este producto del inventario?')) {
+      try {
+        await deleteCatalogProduct(deleteButton.dataset.id);
+        if (editingCatalogProductId === deleteButton.dataset.id) resetCatalogProductForm();
+        showToast('Producto eliminado.');
+      } catch (error) {
+        console.error(error);
+        showToast('No se pudo eliminar el producto.', true);
+      }
+    }
+  });
+
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const product = {
+      name: document.getElementById('catalogProductName').value,
+      category: categorySelect.value,
+      price: document.getElementById('catalogProductPrice').value,
+      description: document.getElementById('catalogProductDescription').value,
+      visibility: document.getElementById('catalogProductVisibility').value,
+      photo: pendingCatalogPhoto
+    };
+    try {
+      if (editingCatalogProductId) {
+        await updateCatalogProduct(editingCatalogProductId, product);
+        showToast('Producto actualizado.');
+      } else {
+        await addCatalogProduct(product);
+        showToast(product.visibility === 'public' ? 'Producto publicado en la tienda.' : 'Producto guardado en el inventario privado.');
+      }
+      resetCatalogProductForm();
+    } catch (error) {
+      console.error(error);
+      showToast('No se pudo guardar el producto. Revisa los datos y las reglas de Firestore.', true);
+    }
+  });
+
+  return unsubscribe;
+}
+
 export function initAdminDashboard() {
   let latestUsers = [];
   let latestOrders = [];
@@ -860,6 +1040,7 @@ export function initAdminDashboard() {
   setupAdminCreateStoreForm();
   setupAdminProductsPanel();
   setupAdminStoreEditPanel();
+  const unsubscribeCatalog = setupCatalogInventoryPanel();
 
   const unsubscribeOrders = watchAllOrders(orders => {
     latestOrders = orders;
@@ -904,6 +1085,7 @@ export function initAdminDashboard() {
     unsubscribeStores();
     unsubscribeDrivers();
     unsubscribeOrders();
+    unsubscribeCatalog();
     closeAdminStoreProducts();
   };
 }

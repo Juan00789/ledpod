@@ -1,156 +1,126 @@
-import { watchSession, logout } from './auth/auth-service.js';
-import { initAdminDashboard } from './admin/dashboard.js';
-import { initClientDashboard } from './client/dashboard.js';
-import { initMerchantDashboard } from './merchant/dashboard.js';
-import { initDriverDashboard } from './driver/dashboard.js';
+import { CATEGORIES, PRODUCTS as DEFAULT_PRODUCTS, WHATSAPP, SLIDES } from "./data.js";
+import { watchCatalogProducts, watchCatalogState } from "./catalog/public-catalog.js";
+const $ = (s) => document.querySelector(s);
+const money = (n) => "RD$ " + n.toLocaleString("es-DO");
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem("ledpop-cart")) || {}; } catch { return {}; } },
+  set(v) { try { localStorage.setItem("ledpop-cart", JSON.stringify(v)); } catch {} }
+};
+let products = DEFAULT_PRODUCTS;
+let publishedProducts = [];
+let managedCatalog = false;
+let cart = store.get(), cat = "todos", query = "";
 
-const panelByRole = {
-  cliente: './panels/client.html',
-  comercio: './panels/merchant.html',
-  repartidor: './panels/driver.html',
-  admin: './panels/admin.html'
+function renderCats() {
+  $("#categorias").innerHTML = CATEGORIES.map((c) =>
+    `<button class="cat ${cat === c.id ? "on" : ""}" data-cat="${c.id}"><span>${c.icon}</span><b>${esc(c.name)}</b><small>${esc(c.sub)}</small></button>`).join("") +
+    `<a class="cat service-cat" href="#servicios"><span>🛠️</span><b>Servicios Técnicos</b><small>Instalación y asesoría</small></a>`;
+}
+function renderGrid() {
+  const q = query.trim().toLowerCase();
+  const list = products.filter((p) => (cat === "todos" || p.cat === cat) &&
+    (!q || `${p.name} ${p.sub} ${p.cat}`.toLowerCase().includes(q)));
+  $("#grid").innerHTML = list.length ? list.map((p) => `
+    <article class="card"><div class="ph">${p.img ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">` : p.icon}</div>
+    <div class="b"><h4>${esc(p.name)}</h4><small>${esc(p.sub)}</small></div>
+    <div class="row"><b>${money(p.price)}</b><button class="add" data-add="${p.id}" aria-label="Agregar ${esc(p.name)}">🛒</button></div></article>`).join("")
+    : `<p class="empty">No encontramos productos. Escríbenos por WhatsApp y te ayudamos.</p>`;
+}
+function renderCart() {
+  const rows = Object.entries(cart).map(([id, n]) => [products.find((p) => p.id === id), n]).filter(([p]) => p);
+  const count = rows.reduce((a, [, n]) => a + n, 0), total = rows.reduce((a, [p, n]) => a + p.price * n, 0);
+  $("#cartCount").textContent = count; $("#total").textContent = money(total);
+  $("#order").disabled = !count; $("#order").style.opacity = count ? 1 : .5;
+  $("#items").innerHTML = rows.length ? rows.map(([p, n]) => `
+    <div class="line"><span>${esc(p.name)}</span><b>${money(p.price * n)}</b>
+    <div class="qty"><button data-dec="${p.id}">−</button>${n}<button data-add="${p.id}">+</button></div></div>`).join("")
+    : `<p class="empty">Tu carrito está vacío.</p>`;
+  store.set(cart);
+}
+function change(id, d) { cart[id] = (cart[id] || 0) + d; if (cart[id] <= 0) delete cart[id]; renderCart(); }
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-add],[data-dec],[data-cat]"); if (!t) return;
+  if (t.dataset.add) { change(t.dataset.add, 1); if (t.classList.contains("add")) $("#drawer").classList.add("open"); }
+  else if (t.dataset.dec) change(t.dataset.dec, -1);
+  else { cat = cat === t.dataset.cat ? "todos" : t.dataset.cat; renderCats(); renderGrid(); $("#productos").scrollIntoView(); }
+});
+$("#allBtn").onclick = () => { cat = "todos"; query = ""; $("#search").value = ""; renderCats(); renderGrid(); };
+$("#search").oninput = (e) => { query = e.target.value; renderGrid(); if (query) $("#productos").scrollIntoView(); };
+$("#cartBtn").onclick = () => $("#drawer").classList.add("open");
+$("#closeCart").onclick = () => $("#drawer").classList.remove("open");
+$("#menuBtn").onclick = () => $("#side").classList.toggle("open");
+$("#side").onclick = (e) => { if (e.target.closest("a")) $("#side").classList.remove("open"); };
+const sideLinks = [...document.querySelectorAll("#side a[href^='#']")];
+const sideSections = sideLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+function updateSideLink() {
+  let current = sideSections[0];
+  const threshold = window.innerHeight * 0.4;
+  const sectionsByPosition = [...sideSections].sort((a, b) =>
+    a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  for (const section of sectionsByPosition) {
+    if (section.getBoundingClientRect().top <= threshold) current = section;
+  }
+  sideLinks.forEach((link) => link.classList.toggle("on", link.hash === `#${current.id}`));
+}
+window.addEventListener("scroll", updateSideLink, { passive: true });
+window.addEventListener("hashchange", updateSideLink);
+$("#order").onclick = () => {
+  const rows = Object.entries(cart).map(([id, n]) => [products.find((p) => p.id === id), n]).filter(([p]) => p);
+  if (!rows.length) return;
+  const total = rows.reduce((a, [p, n]) => a + p.price * n, 0);
+  const msg = ["Hola LEDPOD, quiero hacer este pedido:", ...rows.map(([p, n]) => `• ${n} x ${p.name} — ${money(p.price * n)}`), `Total: ${money(total)}`].join("\n");
+  window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
 };
 
-const panelInitByRole = {
-  cliente: initClientDashboard,
-  comercio: initMerchantDashboard,
-  repartidor: initDriverDashboard,
-  admin: (session) => initAdminDashboard(session)
-};
-
-const navByRole = {
-  cliente: [
-    ['inicio', '🏠', 'Inicio'],
-    ['favoritos', '❤️', 'Favoritos'],
-    ['pedidos', '📦', 'Mis pedidos'],
-    ['carrito', '🛒', 'Carrito'],
-    ['perfil', '👤', 'Perfil']
-  ],
-  comercio: [
-    ['inicio', '🏪', 'Inicio'],
-    ['productos', '🍔', 'Productos'],
-    ['pedidos', '📦', 'Pedidos'],
-    ['perfil', '👤', 'Perfil']
-  ],
-  repartidor: [
-    ['perfil', '🛵', 'Perfil'],
-    ['disponibles', '📍', 'Disponibles'],
-    ['activa', '📦', 'Entrega activa'],
-    ['historial', '🕘', 'Historial']
-  ],
-  admin: [
-    ['resumen', '📊', 'Resumen'],
-    ['usuarios', '👥', 'Usuarios'],
-    ['comercios', '🏪', 'Comercios'],
-    ['repartidores', '🛵', 'Repartidores'],
-    ['pedidos', '📦', 'Pedidos'],
-    ['incidencias', '🚨', 'Incidencias'],
-    ['configuracion', '⚙️', 'Configuración']
-  ]
-};
-
-const panelMount = document.getElementById('panelMount');
-const nav = document.getElementById('sideNav');
-const loading = document.getElementById('loading');
-const dashboard = document.getElementById('dashboard');
-const profileName = document.getElementById('profileName');
-const profileRole = document.getElementById('profileRole');
-const profileAvatar = document.getElementById('profileAvatar');
-let stopPanel = null;
-
-function titleCase(value) {
-  return String(value || 'cliente').replace(/^./, c => c.toUpperCase());
+let slide = 0;
+function showSlide(i) {
+  slide = i; $("#heroTitle").textContent = SLIDES[i][0]; $("#heroCopy").textContent = SLIDES[i][1];
+  $("#dots").innerHTML = SLIDES.map((_, k) => `<i class="${k === i ? "on" : ""}" data-s="${k}"></i>`).join("");
 }
+$("#dots").onclick = (e) => { if (e.target.dataset.s) showSlide(+e.target.dataset.s); };
+setInterval(() => showSlide((slide + 1) % SLIDES.length), 6000);
 
-function renderNav(role) {
-  nav.innerHTML = (navByRole[role] || navByRole.cliente).map(([id, icon, label], index) =>
-    `<button class="side-link ${index === 0 ? 'active' : ''}" data-section="${id}">
-      <span>${icon}</span><span>${label}</span>
-    </button>`
-  ).join('');
-}
-
-function activateSection(section) {
-  nav.querySelectorAll('.side-link').forEach(button => {
-    button.classList.toggle('active', button.dataset.section === section);
-  });
-  // Los 4 paneles envuelven su contenido en elementos [data-section],
-  // uno por pestaña de la barra lateral; solo el que coincide con la
-  // pestaña activa queda visible.
-  panelMount.querySelectorAll('[data-section]').forEach(el => {
-    el.style.display = el.dataset.section === section ? '' : 'none';
-  });
-}
-
-async function loadPanel(role) {
-  // OJO: fetch() con una URL relativa se resuelve contra la URL del
-  // documento (app.html, en la raíz), NO contra la URL de este
-  // archivo (src/app.js) — a diferencia de `import`. Sin `import.meta.url`
-  // como base, esto terminaba pidiendo "/panels/client.html" (que no
-  // existe) en vez de "/src/panels/client.html" (donde sí está),
-  // resultando en 404 y "No se pudo cargar tu panel."
-  const url = new URL(panelByRole[role] || panelByRole.cliente, import.meta.url);
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Panel ${role} no disponible (HTTP ${response.status})`);
-  panelMount.innerHTML = await response.text();
-
-  if (stopPanel) {
-    stopPanel();
-    stopPanel = null;
+function usePublishedCatalog() {
+  products = publishedProducts.map((p) => ({
+    id: p.id, img: p.photo, cat: p.category, name: p.name,
+    sub: p.description, price: p.price, icon: "🛍️"
+  }));
+  renderGrid();
+  renderCart();
+  if (!publishedProducts.length) {
+    $("#catalogStatus").textContent = "Pronto publicaremos productos en el catálogo.";
+    $("#catalogStatus").hidden = false;
+  } else {
+    $("#catalogStatus").hidden = true;
   }
 }
 
-function setupNavigation() {
-  nav.addEventListener('click', event => {
-    const button = event.target.closest('.side-link');
-    if (!button) return;
-    activateSection(button.dataset.section);
-  });
-}
-
-setupNavigation();
-
-watchSession(async session => {
-  if (!session) {
-    location.href = './login.html';
-    return;
+watchCatalogProducts((items) => {
+  publishedProducts = items;
+  if (managedCatalog) usePublishedCatalog();
+}, (error) => {
+  console.error("No se pudo cargar el catálogo LEDPOD:", error);
+  const status = $("#catalogStatus");
+  status.textContent = "No se pudo actualizar el catálogo. Se muestran los productos guardados en este sitio.";
+  status.hidden = false;
+});
+watchCatalogState((initialized) => {
+  managedCatalog = initialized;
+  if (managedCatalog) {
+    usePublishedCatalog();
+  } else {
+    products = DEFAULT_PRODUCTS;
+    renderGrid();
+    renderCart();
+    $("#catalogStatus").hidden = true;
   }
-
-  const role = session.profile.role || 'cliente';
-  profileName.textContent = session.profile.name || session.user.email || 'Usuario';
-  profileRole.textContent = titleCase(role);
-  if (profileAvatar) {
-    if (session.profile.photoURL) {
-      profileAvatar.innerHTML = `<img src="${session.profile.photoURL}" alt="">`;
-    } else {
-      profileAvatar.textContent = (session.profile.name || session.user.email || 'Q').trim().charAt(0).toUpperCase();
-    }
-  }
-  renderNav(role);
-
-  try {
-    await loadPanel(role);
-    const primeraSeccion = (navByRole[role] || navByRole.cliente)[0][0];
-    activateSection(primeraSeccion);
-
-    const init = panelInitByRole[role] || panelInitByRole.cliente;
-    stopPanel = init(session) || null;
-
-    loading.style.display = 'none';
-    dashboard.style.display = 'grid';
-  } catch (error) {
-    console.error(error);
-    loading.textContent = `No se pudo cargar tu panel: ${error.message || error}`;
-  }
-}, () => {
-  // El Admin bloqueó esta cuenta mientras la app seguía abierta en el
-  // navegador: watchSession ya cerró la sesión, aquí solo avisamos y
-  // mandamos de vuelta a login con el mensaje correspondiente.
-  sessionStorage.setItem('ledpodBlocked', '1');
-  location.href = './login.html';
+}, (error) => {
+  console.error("No se pudo comprobar el estado del catálogo LEDPOD:", error);
+  const status = $("#catalogStatus");
+  status.textContent = "No se pudo comprobar si el catálogo está actualizado. Se muestran los productos guardados en este sitio.";
+  status.hidden = false;
 });
 
-document.getElementById('logout').addEventListener('click', async () => {
-  await logout();
-  location.href = './login.html';
-});
+renderCats(); renderGrid(); renderCart(); showSlide(0); updateSideLink();

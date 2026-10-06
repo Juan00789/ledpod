@@ -3,7 +3,7 @@
     <div>
       <span class="role">ADMIN CENTRAL</span>
       <h1>Centro de Administración</h1>
-      <p class="muted">Gestiona el catálogo y las cuentas de Ledpod desde un solo lugar.</p>
+      <p class="muted">Gestiona el catálogo y las cuentas de LEDPOD desde un solo lugar.</p>
     </div>
     <div id="adminToast" class="toast" role="status"></div>
   </div>
@@ -23,6 +23,55 @@
         <div class="stat"><div class="muted">Entregados</div><strong id="statOrdersDelivered">0</strong></div>
         <div class="stat"><div class="muted">En curso</div><strong id="statOrdersActive">0</strong></div>
         <div class="stat"><div class="muted">Incidencias</div><strong id="statOrdersIssues">0</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-section" data-section="catalogo" style="display:none">
+    <div class="box" style="margin-bottom:18px">
+      <div class="section-head">
+        <div>
+          <h2>🛍️ Inventario LEDPOD</h2>
+          <p class="muted">Administra fotos, nombres, categorías, precios y descripciones. Elige si cada producto es público o privado.</p>
+        </div>
+      </div>
+      <form id="catalogProductForm" style="max-width:520px">
+        <div class="field"><label for="catalogProductName">Nombre *</label><input id="catalogProductName" required maxlength="100"></div>
+        <div class="field"><label for="catalogProductCategory">Categoría *</label>
+          <select id="catalogProductCategory" required></select>
+        </div>
+        <div class="field"><label for="catalogProductPrice">Precio (RD$) *</label><input id="catalogProductPrice" type="number" min="0" step="0.01" required></div>
+        <div class="field"><label for="catalogProductDescription">Descripción</label><textarea id="catalogProductDescription" rows="3" maxlength="500"></textarea></div>
+        <div class="field">
+          <label for="catalogProductVisibility">Visibilidad</label>
+          <select id="catalogProductVisibility">
+            <option value="public">Público: visible en la tienda</option>
+            <option value="private">Privado: solo en el inventario interno</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="catalogProductPhoto">Foto del producto</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <img id="catalogProductPhotoPreview" class="photo-preview" style="display:none" alt="Vista previa del producto">
+            <input id="catalogProductPhoto" type="file" accept="image/*" capture="environment">
+          </div>
+          <small class="muted">Puedes subir una imagen o tomarla con la cámara. Se optimiza antes de guardarla.</small>
+          <button type="button" id="catalogProductRemovePhoto" class="btn" style="display:none;width:fit-content;margin-top:6px">Quitar foto</button>
+        </div>
+        <button id="catalogProductSubmit" type="submit" class="btn primary">Agregar al inventario</button>
+        <button id="catalogProductCancel" type="button" class="btn" style="display:none">Cancelar edición</button>
+      </form>
+      <button id="catalogSeedDefaults" type="button" class="btn" style="display:none;margin-top:14px">Importar los 4 productos actuales con sus fotos</button>
+    </div>
+    <div class="box">
+      <div class="section-head">
+        <div>
+          <h2>Inventario de productos</h2>
+          <p class="muted">Los productos privados nunca aparecen en la tienda pública.</p>
+        </div>
+      </div>
+      <div id="catalogInventoryList" class="grid">
+        <div class="empty">Cargando inventario…</div>
       </div>
     </div>
   </div>

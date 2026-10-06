@@ -1,77 +1,17 @@
-# Desplegar Ledpod
+# LEDPOP — Deploy
+Sitio estático, sin build. Publica la raíz en Vercel o Netlify (ya incluyen headers de seguridad).
+Local: `npx serve .` (los módulos ES requieren servidor, no abrir con doble clic).
 
-## Qué tipo de proyecto es esto
-El frontend (`index.html`, `login.html`, `register.html`, `app.html` +
-todo `src/`) habla **directo con Firebase** (Auth y Firestore) desde
-el navegador — no necesita ningún servidor propio para funcionar en
-producción. Es un sitio 100% estático.
+## Catálogo e inventario
 
-`server.js` / `package.json` (Express) es un servidor **solo para
-pruebas locales opcionales** de una API de ejemplo (`/api/health`,
-`/api/products`, `/api/orders`) que documenta `README-MVP.md` — el
-frontend real no lo llama para nada (`app.js`, `client/dashboard.js`,
-etc. usan Firestore directamente). Puedes ignorarlo por completo para
-el despliegue.
+El catálogo público se administra desde **Mi Cuenta → Inventario LEDPOD** con una cuenta cuyo rol sea `admin` en Firestore. En el primer ingreso, usa **Importar los 4 productos actuales con sus fotos** para conservar las imágenes existentes como productos del inventario.
 
-Eso significa: **para Vercel y Netlify, se despliega como sitio
-estático, sin build command y sin backend.**
+Cada producto puede guardarse como **Público** (aparece en la tienda) o **Privado** (solo lo ve el administrador). Las imágenes nuevas se comprimen en el navegador antes de guardarse en Firestore.
 
-## Antes de desplegar — checklist de Firebase
-1. En Firebase Console → Authentication → habilita el método
-   **Correo/contraseña**.
-2. En Firebase Console → Firestore → reglas: pega el contenido de
-   `firestore.rules` (Publicar).
-3. Crea manualmente en Firestore el primer usuario `admin`: regístrate
-   normal desde `register.html` (queda como `cliente`), y luego en la
-   consola de Firestore cambia a mano ese documento en
-   `users/{tu-uid}` → `role: "admin"`. De ahí en adelante ya puedes
-   cambiar roles desde el propio panel Admin.
-4. En Firebase Console → Authentication → Settings → **Authorized
-   domains**: agrega el dominio que te dé Vercel/Netlify (ej.
-   `ledpod.vercel.app`) — si no lo agregas, el login fallará
-   con `auth/unauthorized-domain`.
+Al desplegar, publica también las reglas de `firestore.rules` en Firebase Console. El sitio necesita lectura pública de `catalogProducts` y `catalogSettings`; `catalogInventory` y las escrituras quedan limitados a administradores.
 
-Las claves en `firebase.js` (`apiKey`, etc.) son claves públicas de
-cliente — es normal y seguro que viajen en el código del frontend. La
-seguridad real vive en `firestore.rules`.
+Si el catálogo todavía no se ha inicializado, la tienda conserva los productos locales de `src/data.js` y sus imágenes de `src/assets/products/`.
 
-## Desplegar en Vercel
-**Opción A — Dashboard:**
-1. Sube este proyecto a un repositorio de GitHub/GitLab.
-2. En vercel.com → "Add New Project" → importa el repo.
-3. Framework preset: **Other**. Build command: (vacío). Output
-   directory: `.` (raíz).
-4. Deploy.
+## Compartir y dominio
 
-**Opción B — CLI:**
-```bash
-npm install -g vercel
-cd <directorio-del-proyecto>
-vercel --prod
-```
-`vercel.json` ya está incluido con cabeceras de seguridad básicas y
-caché larga para los assets (logos).
-
-## Desplegar en Netlify
-**Opción A — Dashboard:**
-1. Sube el proyecto a GitHub/GitLab.
-2. En app.netlify.com → "Add new site" → "Import an existing project".
-3. Build command: (vacío). Publish directory: `.` (raíz).
-4. Deploy.
-
-**Opción B — CLI:**
-```bash
-npm install -g netlify-cli
-cd <directorio-del-proyecto>
-netlify deploy --prod
-```
-`netlify.toml` ya está incluido (`publish = "."`, sin build command,
-mismas cabeceras de seguridad).
-
-## Después de desplegar
-- Prueba registrar una cuenta nueva, hacer login, y confirma que cada
-  rol carga su panel.
-- Ve al primer paso del checklist de arriba si el login da
-  `auth/unauthorized-domain`.
-- `node_modules/` no se sube (ver `.gitignore`) — ni falta, el sitio
-  no lo necesita para correr.
+La página incluye metadatos básicos Open Graph y Twitter. Para añadir una imagen de vista previa y una URL canónica hace falta el dominio definitivo; actualízalos después de configurarlo.
